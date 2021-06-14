@@ -1,0 +1,518 @@
+---
+title: "core_pred_cm"
+output: html_document
+---
+
+```{r}
+#rm(list = ls())
+#ugh, visualizing these will be fun...
+#first run just with everything, duplication type one hot encoding
+#credit to https://stackoverflow.com/questions/37897252/plot-confusion-matrix-in-r-using-ggplot
+#install.packages("gridExtra")
+
+library(tidyverse)
+library(ggplot2)
+library(gridExtra)
+
+wkdir="./00_collab/02_core_pred/11_CM/"
+
+cm_df = read.table(file = paste0(wkdir,"/cm_table_21_04_23.txt"), header = F, sep = "\t")
+
+header = c("Model", "Train", "Test", "TN_avg", "TN_std", "FP_avg", "FP_std",
+				"FN_avg", "FN_std", "TP_avg", "TP_std")
+
+colnames(cm_df) = header
+
+#try getting on plot object with confusion matrix package.. shit probs can't handle the plus/minus should probs just do this manually huh
+plot_confusion_matrix = function(df = df, model = model, train_sp = train_sp, 
+                                test_sp = test_sp) {
+  #just go with averages and ignore stdev for now
+  #customized function for our confusion matricies
+  #subset data frame
+  sub_df = df[which(df$Model == model & df$Train == train_sp & df$Test == test_sp),]
+  
+  if (nrow(sub_df) != 1) {
+    stop(paste0("unable to get single row for ", model, " ", train_sp, " ", test_sp))
+  }
+
+  sub_table = data.frame(Prediction = factor(c("Core", "Disp", "Core", "Disp")),
+                      Reference = factor(c("Core", "Core", "Disp", "Disp")),
+                      Freq = c(sub_df$TP_avg[1], sub_df$FN_avg[1], 
+                               sub_df$FP_avg[1], sub_df$TN_avg[1]))
+  out_df = sub_table %>%
+    mutate(goodbad = ifelse(table$Prediction == table$Reference, "good", "bad")) %>%
+    group_by(Reference) %>%
+    mutate(prop = Freq/sum(Freq))
+  
+  out_plot = ggplot(data = out_df, mapping = aes(x = Reference, y = Prediction, fill = goodbad, alpha = prop)) +
+    geom_tile() +
+    geom_text(aes(label = Freq), vjust = .5, fontface  = "bold", alpha = 1, size = 2) +
+    scale_fill_manual(values = c(good = "green", bad = "red")) +
+    theme_bw() +
+    xlim(rev(levels(sub_table$Reference))) +
+    ggtitle(paste0(model, " ", train_sp, " ", test_sp)) +
+    theme(legend.position = "none",
+          title = element_text(size = 5))
+  
+  return(out_plot)
+
+}
+
+rft_osat_osat_cm_plot = plot_confusion_matrix(df = cm_df, model = "RFT", train_sp = "Osat",
+                                        test_sp = "Osat")
+
+#hmm make list of plots, lets just do two by two to start then can expand
+rft_plot_list = list()
+svc_plot_list = list()
+gnb_plot_list = list()
+train_list = c("Osat","Bdis","Osat_Bal","Bdis_Bal","BdisA","BdisA_Bal")
+test_list = c("Osat","Bdis","Osat_Bal","Bdis_Bal","BdisA","BdisA_Bal")
+i = 1
+for (train_sp in train_list) {
+  for (test_sp in test_list) {
+    rft_plot_list[[i]] = plot_confusion_matrix(df = cm_df, model = "RFT", 
+                                           train_sp = train_sp, test_sp = test_sp)
+    svc_plot_list[[i]] = plot_confusion_matrix(df = cm_df, model = "SVC", 
+                                           train_sp = train_sp, test_sp = test_sp)
+    gnb_plot_list[[i]] = plot_confusion_matrix(df = cm_df, model = "GNB", 
+                                           train_sp = train_sp, test_sp = test_sp)
+    i = i + 1
+  }
+}
+
+
+height = 8
+width = 8
+png(filename = paste0(wkdir,"/osat_bdis_bdisA_cm_rft.png"), width = width, height = height,
+    units = "in", res = 300)
+  grid.arrange(rft_plot_list[[1]],rft_plot_list[[2]],rft_plot_list[[3]],
+             rft_plot_list[[4]],rft_plot_list[[5]],rft_plot_list[[6]],
+             rft_plot_list[[7]],rft_plot_list[[8]],rft_plot_list[[9]],
+             rft_plot_list[[10]],rft_plot_list[[11]],rft_plot_list[[12]],
+             rft_plot_list[[13]],rft_plot_list[[14]],rft_plot_list[[15]],
+             rft_plot_list[[16]],rft_plot_list[[17]],rft_plot_list[[18]],
+             rft_plot_list[[19]],rft_plot_list[[20]],rft_plot_list[[21]],
+             rft_plot_list[[22]],rft_plot_list[[23]],rft_plot_list[[24]],
+             rft_plot_list[[25]],rft_plot_list[[26]],rft_plot_list[[27]],
+             rft_plot_list[[28]],rft_plot_list[[29]],rft_plot_list[[30]],
+             rft_plot_list[[31]],rft_plot_list[[32]],rft_plot_list[[33]],
+             rft_plot_list[[34]],rft_plot_list[[35]],rft_plot_list[[36]],
+             nrow = 6)
+dev.off()
+
+png(filename = paste0(wkdir,"/osat_bdis_bdisA_cm_svc.png"), width = width, height = height,
+    units = "in", res = 300)
+  grid.arrange(svc_plot_list[[1]],svc_plot_list[[2]],svc_plot_list[[3]],
+             svc_plot_list[[4]],svc_plot_list[[5]],svc_plot_list[[6]],
+             svc_plot_list[[7]],svc_plot_list[[8]],svc_plot_list[[9]],
+             svc_plot_list[[10]],svc_plot_list[[11]],svc_plot_list[[12]],
+             svc_plot_list[[13]],svc_plot_list[[14]],svc_plot_list[[15]],
+             svc_plot_list[[16]],svc_plot_list[[17]],svc_plot_list[[18]],
+             svc_plot_list[[19]],svc_plot_list[[20]],svc_plot_list[[21]],
+             svc_plot_list[[22]],svc_plot_list[[23]],svc_plot_list[[24]],
+             svc_plot_list[[25]],svc_plot_list[[26]],svc_plot_list[[27]],
+             svc_plot_list[[28]],svc_plot_list[[29]],svc_plot_list[[30]],
+             svc_plot_list[[31]],svc_plot_list[[32]],svc_plot_list[[33]],
+             svc_plot_list[[34]],svc_plot_list[[35]],svc_plot_list[[36]],
+             nrow = 6)
+dev.off()
+
+
+png(filename = paste0(wkdir,"/osat_bdis_bdisA_cm_gnb.png"), width = width, height = height,
+    units = "in", res = 300)
+  grid.arrange(gnb_plot_list[[1]],gnb_plot_list[[2]],gnb_plot_list[[3]],
+             gnb_plot_list[[4]],gnb_plot_list[[5]],gnb_plot_list[[6]],
+             gnb_plot_list[[7]],gnb_plot_list[[8]],gnb_plot_list[[9]],
+             gnb_plot_list[[10]],gnb_plot_list[[11]],gnb_plot_list[[12]],
+             gnb_plot_list[[13]],gnb_plot_list[[14]],gnb_plot_list[[15]],
+             gnb_plot_list[[16]],gnb_plot_list[[17]],gnb_plot_list[[18]],
+             gnb_plot_list[[19]],gnb_plot_list[[20]],gnb_plot_list[[21]],
+             gnb_plot_list[[22]],gnb_plot_list[[23]],gnb_plot_list[[24]],
+             gnb_plot_list[[25]],gnb_plot_list[[26]],gnb_plot_list[[27]],
+             gnb_plot_list[[28]],gnb_plot_list[[29]],gnb_plot_list[[30]],
+             gnb_plot_list[[31]],gnb_plot_list[[32]],gnb_plot_list[[33]],
+             gnb_plot_list[[34]],gnb_plot_list[[35]],gnb_plot_list[[36]],
+             nrow = 6)
+dev.off()
+
+```
+
+
+#messin with some stack overflow suggestions
+```{r}
+install.packages("caret")
+install.packages("e1071")
+library(caret)
+library(e1071)
+
+lvs <- c("normal", "abnormal")
+truth <- factor(rep(lvs, times = c(86, 258)),
+                levels = rev(lvs))
+pred <- factor(
+  c(
+    rep(lvs, times = c(54, 32)),
+    rep(lvs, times = c(27, 231))),
+  levels = rev(lvs))
+
+confusionMatrix(pred, truth)
+
+table <- data.frame(confusionMatrix(pred, truth)$table)
+
+plotTable <- table %>%
+  mutate(goodbad = ifelse(table$Prediction == table$Reference, "good", "bad")) %>%
+  group_by(Reference) %>%
+  mutate(prop = Freq/sum(Freq))
+ggplot(data = plotTable, mapping = aes(x = Reference, y = Prediction, fill = goodbad, alpha = prop)) +
+  geom_tile() +
+  geom_text(aes(label = Freq), vjust = .5, fontface  = "bold", alpha = 1) +
+  scale_fill_manual(values = c(good = "green", bad = "red")) +
+  theme_bw() +
+  xlim(rev(levels(table$Reference)))
+
+plotTable
+#   Prediction Reference  Freq goodbad  prop
+#   <fct>      <fct>     <int> <chr>   <dbl>
+# 1 abnormal   abnormal    231 good    0.895
+# 2 normal     abnormal     27 bad     0.105
+# 3 abnormal   normal       32 bad     0.372
+# 4 normal     normal       54 good    0.628
+
+sub_confusion_matrix = function(df = df, model = model, train_sp = train_sp, 
+                                test_sp = test_sp) {
+  #just go with averages and ignore stdev for now
+  #customized function for our confusion matricies
+  #subset data frame
+  sub_df = df[which(df$Model == model & df$Train == train_sp & df$Test == test_sp),]
+  
+  if (nrow(sub_df) != 1) {
+    stop(paste0("unable to get single row for ", model, " ", train_sp, " ", test_sp))
+  }
+
+  sub_table = data.frame(Prediction = c("Core", "Disp", "Core", "Disp"),
+                      Reference = c("Core", "Core", "Disp", "Disp"),
+                      Freq = c(sub_df$TP_avg[1], sub_df$FN_avg[1], 
+                               sub_df$FP_avg[1], sub_df$TN_avg[1]))
+  out_df = sub_table %>%
+  mutate(goodbad = ifelse(table$Prediction == table$Reference, "good", "bad")) %>%
+  group_by(Reference) %>%
+  mutate(prop = Freq/sum(Freq))
+  
+  return(out_df)
+
+}
+
+
+```
+
+
+
+
+#no Ka/Ks included..
+#I mean just has to be a balancing issue right?
+```{r}
+#rm(list = ls())
+#ugh, visualizing these will be fun...
+#first run just with everything, duplication type one hot encoding
+#credit to https://stackoverflow.com/questions/37897252/plot-confusion-matrix-in-r-using-ggplot
+#install.packages("gridExtra")
+
+library(tidyverse)
+library(ggplot2)
+library(gridExtra)
+
+wkdir="./00_collab/02_core_pred/11_CM/"
+
+cm_df = read.table(file = paste0(wkdir,"/cm_table_no_ka_ks_21_04_23.txt"), header = F, sep = "\t")
+
+header = c("Model", "Train", "Test", "TN_avg", "TN_std", "FP_avg", "FP_std",
+				"FN_avg", "FN_std", "TP_avg", "TP_std")
+
+colnames(cm_df) = header
+
+#try getting on plot object with confusion matrix package.. shit probs can't handle the plus/minus should probs just do this manually huh
+plot_confusion_matrix = function(df = df, model = model, train_sp = train_sp, 
+                                test_sp = test_sp) {
+  #just go with averages and ignore stdev for now
+  #customized function for our confusion matricies
+  #subset data frame
+  sub_df = df[which(df$Model == model & df$Train == train_sp & df$Test == test_sp),]
+  
+  if (nrow(sub_df) != 1) {
+    stop(paste0("unable to get single row for ", model, " ", train_sp, " ", test_sp))
+  }
+
+  sub_table = data.frame(Prediction = factor(c("Core", "Disp", "Core", "Disp")),
+                      Reference = factor(c("Core", "Core", "Disp", "Disp")),
+                      Freq = c(sub_df$TP_avg[1], sub_df$FN_avg[1], 
+                               sub_df$FP_avg[1], sub_df$TN_avg[1]))
+  out_df = sub_table %>%
+    mutate(goodbad = ifelse(table$Prediction == table$Reference, "good", "bad")) %>%
+    group_by(Reference) %>%
+    mutate(prop = Freq/sum(Freq))
+  
+  out_plot = ggplot(data = out_df, mapping = aes(x = Reference, y = Prediction, fill = goodbad, alpha = prop)) +
+    geom_tile() +
+    geom_text(aes(label = Freq), vjust = .5, fontface  = "bold", alpha = 1, size = 2) +
+    scale_fill_manual(values = c(good = "green", bad = "red")) +
+    theme_bw() +
+    xlim(rev(levels(sub_table$Reference))) +
+    ggtitle(paste0(model, " ", train_sp, " ", test_sp)) +
+    theme(legend.position = "none",
+          title = element_text(size = 5))
+  
+  return(out_plot)
+
+}
+
+#rft_osat_osat_cm_plot = plot_confusion_matrix(df = cm_df, model = "RFT", train_sp = "Osat",
+#                                        test_sp = "Osat")
+
+#hmm make list of plots, lets just do two by two to start then can expand
+rft_plot_list = list()
+svc_plot_list = list()
+gnb_plot_list = list()
+train_list = c("Osat","Bdis","Osat_Bal","Bdis_Bal","BdisA","BdisA_Bal")
+test_list = c("Osat","Bdis","Osat_Bal","Bdis_Bal","BdisA","BdisA_Bal")
+i = 1
+for (train_sp in train_list) {
+  for (test_sp in test_list) {
+    rft_plot_list[[i]] = plot_confusion_matrix(df = cm_df, model = "RFT", 
+                                           train_sp = train_sp, test_sp = test_sp)
+    svc_plot_list[[i]] = plot_confusion_matrix(df = cm_df, model = "SVC", 
+                                           train_sp = train_sp, test_sp = test_sp)
+    gnb_plot_list[[i]] = plot_confusion_matrix(df = cm_df, model = "GNB", 
+                                           train_sp = train_sp, test_sp = test_sp)
+    i = i + 1
+  }
+}
+
+
+height = 8
+width = 8
+png(filename = paste0(wkdir,"/osat_bdis_bdisA_cm_no_ka_ks_rft.png"), width = width, height = height,
+    units = "in", res = 300)
+  grid.arrange(rft_plot_list[[1]],rft_plot_list[[2]],rft_plot_list[[3]],
+             rft_plot_list[[4]],rft_plot_list[[5]],rft_plot_list[[6]],
+             rft_plot_list[[7]],rft_plot_list[[8]],rft_plot_list[[9]],
+             rft_plot_list[[10]],rft_plot_list[[11]],rft_plot_list[[12]],
+             rft_plot_list[[13]],rft_plot_list[[14]],rft_plot_list[[15]],
+             rft_plot_list[[16]],rft_plot_list[[17]],rft_plot_list[[18]],
+             rft_plot_list[[19]],rft_plot_list[[20]],rft_plot_list[[21]],
+             rft_plot_list[[22]],rft_plot_list[[23]],rft_plot_list[[24]],
+             rft_plot_list[[25]],rft_plot_list[[26]],rft_plot_list[[27]],
+             rft_plot_list[[28]],rft_plot_list[[29]],rft_plot_list[[30]],
+             rft_plot_list[[31]],rft_plot_list[[32]],rft_plot_list[[33]],
+             rft_plot_list[[34]],rft_plot_list[[35]],rft_plot_list[[36]],
+             nrow = 6)
+dev.off()
+
+png(filename = paste0(wkdir,"/osat_bdis_bdisA_cm_no_ka_ks_svc.png"), width = width, height = height,
+    units = "in", res = 300)
+  grid.arrange(svc_plot_list[[1]],svc_plot_list[[2]],svc_plot_list[[3]],
+             svc_plot_list[[4]],svc_plot_list[[5]],svc_plot_list[[6]],
+             svc_plot_list[[7]],svc_plot_list[[8]],svc_plot_list[[9]],
+             svc_plot_list[[10]],svc_plot_list[[11]],svc_plot_list[[12]],
+             svc_plot_list[[13]],svc_plot_list[[14]],svc_plot_list[[15]],
+             svc_plot_list[[16]],svc_plot_list[[17]],svc_plot_list[[18]],
+             svc_plot_list[[19]],svc_plot_list[[20]],svc_plot_list[[21]],
+             svc_plot_list[[22]],svc_plot_list[[23]],svc_plot_list[[24]],
+             svc_plot_list[[25]],svc_plot_list[[26]],svc_plot_list[[27]],
+             svc_plot_list[[28]],svc_plot_list[[29]],svc_plot_list[[30]],
+             svc_plot_list[[31]],svc_plot_list[[32]],svc_plot_list[[33]],
+             svc_plot_list[[34]],svc_plot_list[[35]],svc_plot_list[[36]],
+             nrow = 6)
+dev.off()
+
+
+png(filename = paste0(wkdir,"/osat_bdis_bdisA_cm_no_ka_ks_gnb.png"), width = width, height = height,
+    units = "in", res = 300)
+  grid.arrange(gnb_plot_list[[1]],gnb_plot_list[[2]],gnb_plot_list[[3]],
+             gnb_plot_list[[4]],gnb_plot_list[[5]],gnb_plot_list[[6]],
+             gnb_plot_list[[7]],gnb_plot_list[[8]],gnb_plot_list[[9]],
+             gnb_plot_list[[10]],gnb_plot_list[[11]],gnb_plot_list[[12]],
+             gnb_plot_list[[13]],gnb_plot_list[[14]],gnb_plot_list[[15]],
+             gnb_plot_list[[16]],gnb_plot_list[[17]],gnb_plot_list[[18]],
+             gnb_plot_list[[19]],gnb_plot_list[[20]],gnb_plot_list[[21]],
+             gnb_plot_list[[22]],gnb_plot_list[[23]],gnb_plot_list[[24]],
+             gnb_plot_list[[25]],gnb_plot_list[[26]],gnb_plot_list[[27]],
+             gnb_plot_list[[28]],gnb_plot_list[[29]],gnb_plot_list[[30]],
+             gnb_plot_list[[31]],gnb_plot_list[[32]],gnb_plot_list[[33]],
+             gnb_plot_list[[34]],gnb_plot_list[[35]],gnb_plot_list[[36]],
+             nrow = 6)
+dev.off()
+
+```
+
+
+#get tables for supplement, just reference genotype for bdis sooo 4x4?
+```{r}
+#rm(list = ls())
+#ugh, visualizing these will be fun...
+#first run just with everything, duplication type one hot encoding
+#credit to https://stackoverflow.com/questions/37897252/plot-confusion-matrix-in-r-using-ggplot
+#install.packages("gridExtra")
+
+library(tidyverse)
+library(ggplot2)
+library(gridExtra)
+
+wkdir="./00_collab/02_core_pred/11_CM/"
+
+cm_df = read.table(file = paste0(wkdir,"/cm_table_21_04_30.txt"), header = F, sep = "\t")
+
+header = c("Model", "Train", "Test", "TN_avg", "TN_std", "FP_avg", "FP_std",
+				"FN_avg", "FN_std", "TP_avg", "TP_std")
+
+colnames(cm_df) = header
+
+#try getting on plot object with confusion matrix package.. shit probs can't handle the plus/minus should probs just do this manually huh
+plot_confusion_matrix = function(df = df, model = model, train_sp = train_sp, 
+                                test_sp = test_sp) {
+  #just go with averages and ignore stdev for now
+  #customized function for our confusion matricies
+  #subset data frame
+  sub_df = df[which(df$Model == model & df$Train == train_sp & df$Test == test_sp),]
+  
+  if (nrow(sub_df) != 1) {
+    stop(paste0("unable to get single row for ", model, " ", train_sp, " ", test_sp))
+  }
+
+  sub_table = data.frame(Prediction = factor(c("Core", "Disp", "Core", "Disp")),
+                      Reference = factor(c("Core", "Core", "Disp", "Disp")),
+                      Freq = c(sub_df$TP_avg[1], sub_df$FN_avg[1], 
+                               sub_df$FP_avg[1], sub_df$TN_avg[1]))
+  out_df = sub_table %>%
+    mutate(goodbad = ifelse(sub_table$Prediction == sub_table$Reference, "good", "bad")) %>%
+    group_by(Reference) %>%
+    mutate(prop = Freq/sum(Freq))
+  
+  out_plot = ggplot(data = out_df, mapping = aes(x = Reference, y = Prediction, fill = goodbad, alpha = prop)) +
+    geom_tile() +
+    geom_text(aes(label = Freq), vjust = .5, fontface  = "bold", alpha = 1, size = 2) +
+    scale_fill_manual(values = c(good = "green", bad = "red")) +
+    theme_bw() +
+    xlim(rev(levels(sub_table$Reference))) +
+    ggtitle(paste0(model, " ", train_sp, " ", test_sp)) +
+    theme(legend.position = "none",
+          title = element_text(size = 5))
+  
+  return(out_plot)
+
+}
+
+
+#hmm make list of plots, lets just do two by two to start then can expand
+rft_plot_list = list()
+svc_plot_list = list()
+gnb_plot_list = list()
+train_list = c("Osat","Bdis","Osat_Bal","Bdis_Bal")
+test_list = c("Osat","Bdis","Osat_Bal","Bdis_Bal")
+i = 1
+for (train_sp in train_list) {
+  for (test_sp in test_list) {
+    rft_plot_list[[i]] = plot_confusion_matrix(df = cm_df, model = "RFT", 
+                                           train_sp = train_sp, test_sp = test_sp)
+    svc_plot_list[[i]] = plot_confusion_matrix(df = cm_df, model = "SVC", 
+                                           train_sp = train_sp, test_sp = test_sp)
+    gnb_plot_list[[i]] = plot_confusion_matrix(df = cm_df, model = "GNB", 
+                                           train_sp = train_sp, test_sp = test_sp)
+    i = i + 1
+  }
+}
+
+
+height = 8
+width = 8
+png(filename = paste0(wkdir,"/osat_bdis_cm_rft.png"), width = width, height = height,
+    units = "in", res = 300)
+  grid.arrange(rft_plot_list[[1]],rft_plot_list[[2]],rft_plot_list[[3]],
+             rft_plot_list[[4]],rft_plot_list[[5]],rft_plot_list[[6]],
+             rft_plot_list[[7]],rft_plot_list[[8]],rft_plot_list[[9]],
+             rft_plot_list[[10]],rft_plot_list[[11]],rft_plot_list[[12]],
+             rft_plot_list[[13]],rft_plot_list[[14]],rft_plot_list[[15]],
+             rft_plot_list[[16]],
+             nrow = 4)
+dev.off()
+
+png(filename = paste0(wkdir,"/osat_bdis_cm_svc.png"), width = width, height = height,
+    units = "in", res = 300)
+  grid.arrange(svc_plot_list[[1]],svc_plot_list[[2]],svc_plot_list[[3]],
+             svc_plot_list[[4]],svc_plot_list[[5]],svc_plot_list[[6]],
+             svc_plot_list[[7]],svc_plot_list[[8]],svc_plot_list[[9]],
+             svc_plot_list[[10]],svc_plot_list[[11]],svc_plot_list[[12]],
+             svc_plot_list[[13]],svc_plot_list[[14]],svc_plot_list[[15]],
+             svc_plot_list[[16]],
+             nrow = 4)
+dev.off()
+
+
+png(filename = paste0(wkdir,"/osat_bdis_cm_gnb.png"), width = width, height = height,
+    units = "in", res = 300)
+  grid.arrange(gnb_plot_list[[1]],gnb_plot_list[[2]],gnb_plot_list[[3]],
+             gnb_plot_list[[4]],gnb_plot_list[[5]],gnb_plot_list[[6]],
+             gnb_plot_list[[7]],gnb_plot_list[[8]],gnb_plot_list[[9]],
+             gnb_plot_list[[10]],gnb_plot_list[[11]],gnb_plot_list[[12]],
+             gnb_plot_list[[13]],gnb_plot_list[[14]],gnb_plot_list[[15]],
+             gnb_plot_list[[16]],
+             nrow = 4)
+dev.off()
+
+```
+
+sessionInfo()
+R version 4.0.3 (2020-10-10)
+Platform: x86_64-apple-darwin17.0 (64-bit)
+Running under: macOS Catalina 10.15.7
+
+Matrix products: default
+BLAS:   /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/4.0/Resources/lib/libRlapack.dylib
+
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+ [1] multipanelfigure_2.1.2 gridExtra_2.3          e1071_1.7-6            caret_6.0-86          
+ [5] lattice_0.20-41        forcats_0.5.1          stringr_1.4.0          dplyr_1.0.4           
+ [9] purrr_0.3.4            readr_1.4.0            tidyr_1.1.2            tibble_3.0.6          
+[13] ggplot2_3.3.3          tidyverse_1.3.0        phytools_0.7-70        maps_3.3.0            
+[17] ape_5.4-1             
+
+loaded via a namespace (and not attached):
+ [1] assertive.base_0.0-9       colorspace_2.0-0           ellipsis_0.3.1            
+ [4] class_7.3-17               fs_1.5.0                   rstudioapi_0.13           
+ [7] proxy_0.4-25               farver_2.0.3               prodlim_2019.11.13        
+[10] fansi_0.4.2                lubridate_1.7.9.2          xml2_1.3.2                
+[13] codetools_0.2-16           splines_4.0.3              mnormt_2.0.2              
+[16] knitr_1.31                 jsonlite_1.7.2             pROC_1.17.0.1             
+[19] broom_0.7.4                dbplyr_2.1.0               compiler_4.0.3            
+[22] httr_1.4.2                 backports_1.2.1            assertthat_0.2.1          
+[25] Matrix_1.2-18              cli_2.4.0                  htmltools_0.5.1.1         
+[28] tools_4.0.3                igraph_1.2.6               coda_0.19-4               
+[31] gtable_0.3.0               glue_1.4.2                 reshape2_1.4.4            
+[34] clusterGeneration_1.3.7    tinytex_0.29               fastmatch_1.1-0           
+[37] Rcpp_1.0.6                 cellranger_1.1.0           vctrs_0.3.6               
+[40] nlme_3.1-149               assertive.files_0.0-2      iterators_1.0.13          
+[43] timeDate_3043.102          gower_0.2.2                xfun_0.20                 
+[46] rvest_0.3.6                lifecycle_1.0.0            phangorn_2.5.5            
+[49] gtools_3.8.2               MASS_7.3-53                scales_1.1.1              
+[52] ipred_0.9-11               hms_1.0.0                  parallel_4.0.3            
+[55] expm_0.999-6               yaml_2.2.1                 rpart_4.1-15              
+[58] stringi_1.5.3              foreach_1.5.1              plotrix_3.8-1             
+[61] lava_1.6.9                 rlang_0.4.10               pkgconfig_2.0.3           
+[64] evaluate_0.14              assertive.properties_0.0-4 recipes_0.1.16            
+[67] labeling_0.4.2             tidyselect_1.1.0           plyr_1.8.6                
+[70] magrittr_2.0.1             R6_2.5.0                   magick_2.6.0              
+[73] generics_0.1.0             combinat_0.0-8             DBI_1.1.1                 
+[76] pillar_1.4.7               haven_2.3.1                withr_2.4.1               
+[79] assertive.numbers_0.0-2    survival_3.2-7             scatterplot3d_0.3-41      
+[82] nnet_7.3-14                modelr_0.1.8               crayon_1.4.0              
+[85] assertive.types_0.0-3      utf8_1.1.4                 tmvnsim_1.0-2             
+[88] rmarkdown_2.6              grid_4.0.3                 readxl_1.3.1              
+[91] data.table_1.14.0          ModelMetrics_1.2.2.2       reprex_1.0.0              
+[94] digest_0.6.27              numDeriv_2016.8-1.1        gridGraphics_0.5-1        
+[97] stats4_4.0.3               munsell_0.5.0              quadprog_1.5-8 
+

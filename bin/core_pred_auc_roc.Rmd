@@ -1,0 +1,333 @@
+---
+title: "core_pred_auc_roc"
+output: html_document
+---
+
+#calculate mean and stdev for some auc roc
+```{r}
+#these are osat and bdis trained on dinucleotide plus quant gene features
+#unbalanced and intra-specific tested, 10 fold
+
+
+auc_roc_osat_svc = c(0.72,0.73,0.72,0.73,0.73,0.73,0.72,0.72,0.74,0.72)
+auc_roc_osat_gnb = c(0.69,0.7,0.69,0.69,0.7,0.7,0.69,0.68,0.71,0.69)
+auc_roc_osat_rft = c(0.75,0.77,0.75,0.75,0.76,0.77,0.75,0.76,0.76,0.76)
+auc_roc_bdis_svc = c(0.74,0.73,0.72,0.75,0.73,0.74,0.73,0.75,0.75,0.75)
+auc_roc_bdis_gnb = c(0.76,0.75,0.73,0.76,0.74,0.75,0.73,0.76,0.75,0.76)
+auc_roc_bdis_rft = c(0.83,0.83,0.82,0.83,0.82,0.83,0.83,0.84,0.83,0.83)
+
+mean(auc_roc_osat_svc)
+mean(auc_roc_osat_gnb)
+mean(auc_roc_osat_rft)
+mean(auc_roc_bdis_svc)
+mean(auc_roc_bdis_gnb)
+mean(auc_roc_bdis_rft)
+
+sd(auc_roc_osat_svc)
+sd(auc_roc_osat_gnb)
+sd(auc_roc_osat_rft)
+sd(auc_roc_bdis_svc)
+sd(auc_roc_bdis_gnb)
+sd(auc_roc_bdis_rft)
+
+```
+
+#ortho dup manual calcs
+```{r}
+#these are osat and bdis trained on ortho_dup
+#unbalanced and intra-specific tested, 10 fold
+
+
+auc_roc_osat_svc = c(0.70,0.75,0.76,0.74,0.76,0.76,0.74,0.76,0.71,0.70)
+auc_roc_osat_gnb = c(0.67,0.71,0.72,0.71,0.73,0.73,0.71,0.72,0.67,0.67)
+auc_roc_osat_rft = c(0.73,0.77,0.78,0.78,0.78,0.78,0.76,0.78,0.75,0.72)
+auc_roc_bdis_svc = c(0.79,0.78,0.76,0.80,0.77,0.79,0.79,0.81,0.80,0.79)
+auc_roc_bdis_gnb = c(0.79,0.78,0.76,0.79,0.77,0.79,0.78,0.80,0.79,0.79)
+auc_roc_bdis_rft = c(0.85,0.85,0.85,0.85,0.84,0.86,0.87,0.87,0.87,0.86)
+
+mean(auc_roc_osat_svc)
+mean(auc_roc_osat_gnb)
+mean(auc_roc_osat_rft)
+mean(auc_roc_bdis_svc)
+mean(auc_roc_bdis_gnb)
+mean(auc_roc_bdis_rft)
+
+sd(auc_roc_osat_svc)
+sd(auc_roc_osat_gnb)
+sd(auc_roc_osat_rft)
+sd(auc_roc_bdis_svc)
+sd(auc_roc_bdis_gnb)
+sd(auc_roc_bdis_rft)
+
+```
+
+
+
+
+#stitch together some curves, need four right?
+#osat,bdis, balanced, unbalanced
+
+```{r}
+library(multipanelfigure)
+
+plot_width = 7
+plot_height = 9.625
+wkdir="./00_collab/02_core_pred/06_auc_roc/ortho_dup/"
+#?multi_panel_figure()
+#?fill_panel()
+figure1 <- multi_panel_figure(
+  width=plot_width, height=plot_height, unit="inches",
+  columns = 3, rows = 4)
+
+figure1 %<>% fill_panel(
+  paste0(wkdir, "/auc_roc_osat_ortho_dup_all_svc.png"),
+  column = 1,
+  row = 1,
+  scaling = "fit")
+figure1 %<>% fill_panel(
+  paste0(wkdir, "/auc_roc_osat_ortho_dup_all_gnb.png"),
+  column = 2,
+  row = 1,
+  scaling = "fit")
+figure1 %<>% fill_panel(
+  paste0(wkdir, "/auc_roc_osat_ortho_dup_all_rft.png"),
+  column = 3,
+  row = 1,
+  scaling = "fit")
+###################################
+figure1 %<>% fill_panel(
+  paste0(wkdir, "/auc_roc_osat_bal_ortho_dup_all_svc.png"),
+  column = 1,
+  row = 2,
+  scaling = "fit")
+figure1 %<>% fill_panel(
+  paste0(wkdir, "/auc_roc_osat_bal_ortho_dup_all_gnb.png"),
+  column = 2,
+  row = 2,
+  scaling = "fit")
+figure1 %<>% fill_panel(
+  paste0(wkdir, "/auc_roc_osat_bal_ortho_dup_all_rft.png"),
+  column = 3,
+  row = 2,
+  scaling = "fit")
+###################################
+figure1 %<>% fill_panel(
+  paste0(wkdir, "/auc_roc_bdis_ortho_dup_all_svc.png"),
+  column = 1,
+  row = 3,
+  scaling = "fit")
+figure1 %<>% fill_panel(
+  paste0(wkdir, "/auc_roc_bdis_ortho_dup_all_gnb.png"),
+  column = 2,
+  row = 3,
+  scaling = "fit")
+figure1 %<>% fill_panel(
+  paste0(wkdir, "/auc_roc_bdis_ortho_dup_all_rft.png"),
+  column = 3,
+  row = 3,
+  scaling = "fit")
+###################################
+figure1 %<>% fill_panel(
+  paste0(wkdir, "/auc_roc_bdis_bal_ortho_dup_all_svc.png"),
+  column = 1,
+  row = 4,
+  scaling = "fit")
+figure1 %<>% fill_panel(
+  paste0(wkdir, "/auc_roc_bdis_bal_ortho_dup_all_gnb.png"),
+  column = 2,
+  row = 4,
+  scaling = "fit")
+figure1 %<>% fill_panel(
+  paste0(wkdir, "/auc_roc_bdis_bal_ortho_dup_all_rft.png"),
+  column = 3,
+  row = 4,
+  scaling = "fit")
+
+
+figure1
+
+pdf(file = paste0(wkdir,"/osat_bdis_auc_roc.pdf"), width=plot_width, height=plot_height)
+  figure1
+  dev.off()
+png(file = paste0(wkdir,"/osat_bdis_auc_roc.png"), width=plot_width, height=plot_height, units = "in", res = 300)
+  figure1
+  dev.off()
+```
+
+
+#stitch new auc-roc together
+
+```{r}
+library(multipanelfigure)
+
+plot_width = 7
+plot_height = 9.625
+wkdir="./00_collab/02_core_pred/06_auc_roc/"
+#?multi_panel_figure()
+#?fill_panel()
+figure1 <- multi_panel_figure(
+  width=plot_width, height=plot_height, unit="inches",
+  columns = 3, rows = 4)
+
+#####GNB
+figure1 %<>% fill_panel(
+  paste0(wkdir, "/auc_roc_GNB_Osat.png"),
+  column = 1,
+  row = 1,
+  scaling = "fit")
+figure1 %<>% fill_panel(
+  paste0(wkdir, "/auc_roc_GNB_Osat_Bal.png"),
+  column = 1,
+  row = 2,
+  scaling = "fit")
+figure1 %<>% fill_panel(
+  paste0(wkdir, "/auc_roc_GNB_Bdis.png"),
+  column = 1,
+  row = 3,
+  scaling = "fit")
+figure1 %<>% fill_panel(
+  paste0(wkdir, "/auc_roc_GNB_Bdis_Bal.png"),
+  column = 1,
+  row = 4,
+  scaling = "fit")
+
+#####SVC
+figure1 %<>% fill_panel(
+  paste0(wkdir, "/auc_roc_SVC_Osat.png"),
+  column = 2,
+  row = 1,
+  scaling = "fit")
+figure1 %<>% fill_panel(
+  paste0(wkdir, "/auc_roc_SVC_Osat_Bal.png"),
+  column = 2,
+  row = 2,
+  scaling = "fit")
+figure1 %<>% fill_panel(
+  paste0(wkdir, "/auc_roc_SVC_Bdis.png"),
+  column = 2,
+  row = 3,
+  scaling = "fit")
+figure1 %<>% fill_panel(
+  paste0(wkdir, "/auc_roc_SVC_Bdis_Bal.png"),
+  column = 2,
+  row = 4,
+  scaling = "fit")
+
+#####RFT
+figure1 %<>% fill_panel(
+  paste0(wkdir, "/auc_roc_RFT_Osat.png"),
+  column = 3,
+  row = 1,
+  scaling = "fit")
+figure1 %<>% fill_panel(
+  paste0(wkdir, "/auc_roc_RFT_Osat_Bal.png"),
+  column = 3,
+  row = 2,
+  scaling = "fit")
+figure1 %<>% fill_panel(
+  paste0(wkdir, "/auc_roc_RFT_Bdis.png"),
+  column = 3,
+  row = 3,
+  scaling = "fit")
+figure1 %<>% fill_panel(
+  paste0(wkdir, "/auc_roc_RFT_Bdis_Bal.png"),
+  column = 3,
+  row = 4,
+  scaling = "fit")
+
+
+figure1
+
+pdf(file = paste0(wkdir,"/osat_bdis_auc_roc.pdf"), width=plot_width, height=plot_height)
+  figure1
+  dev.off()
+png(file = paste0(wkdir,"/osat_bdis_auc_roc.png"), width=plot_width, height=plot_height, units = "in", res = 300)
+  figure1
+  dev.off()
+```
+
+
+#combine the metrics tables to one
+```{r}
+library(tidyverse)
+
+wkdir="./00_collab/02_core_pred/"
+
+auc_table = read.table(file = paste0(wkdir,"/06_auc_roc/auc_table_21_04_30.txt"), sep = "\t", header = F)
+colnames(auc_table) = c("Model","Test","Train","AUC")
+
+mcc_table = read.table(file = paste0(wkdir,"/06_auc_roc/auc_table_21_04_30.txt"), sep = "\t", header = F)
+colnames(mcc_table) = c("Model","Test","Train","MCC")
+
+acc_table = read.table(file = paste0(wkdir,"/09_model_acc/acc_table_21_04_30.txt"), sep = "\t", header = F)
+colnames(acc_table) = c("Model","Test","Train","ACC")
+
+
+combined_table = merge(auc_table,mcc_table)
+combined_table = merge(combined_table,acc_table)
+
+write.table(combined_table, file = paste0(wkdir,"/Table_S1.csv"), sep = ",", quote = FALSE, row.names = F)
+
+```
+
+
+
+sessionInfo()
+R version 4.0.3 (2020-10-10)
+Platform: x86_64-apple-darwin17.0 (64-bit)
+Running under: macOS Catalina 10.15.7
+
+Matrix products: default
+BLAS:   /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/4.0/Resources/lib/libRlapack.dylib
+
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+ [1] multipanelfigure_2.1.2 gridExtra_2.3          e1071_1.7-6            caret_6.0-86          
+ [5] lattice_0.20-41        forcats_0.5.1          stringr_1.4.0          dplyr_1.0.4           
+ [9] purrr_0.3.4            readr_1.4.0            tidyr_1.1.2            tibble_3.0.6          
+[13] ggplot2_3.3.3          tidyverse_1.3.0        phytools_0.7-70        maps_3.3.0            
+[17] ape_5.4-1             
+
+loaded via a namespace (and not attached):
+ [1] assertive.base_0.0-9       colorspace_2.0-0           ellipsis_0.3.1            
+ [4] class_7.3-17               fs_1.5.0                   rstudioapi_0.13           
+ [7] proxy_0.4-25               farver_2.0.3               prodlim_2019.11.13        
+[10] fansi_0.4.2                lubridate_1.7.9.2          xml2_1.3.2                
+[13] codetools_0.2-16           splines_4.0.3              mnormt_2.0.2              
+[16] knitr_1.31                 jsonlite_1.7.2             pROC_1.17.0.1             
+[19] broom_0.7.4                dbplyr_2.1.0               compiler_4.0.3            
+[22] httr_1.4.2                 backports_1.2.1            assertthat_0.2.1          
+[25] Matrix_1.2-18              cli_2.4.0                  htmltools_0.5.1.1         
+[28] tools_4.0.3                igraph_1.2.6               coda_0.19-4               
+[31] gtable_0.3.0               glue_1.4.2                 reshape2_1.4.4            
+[34] clusterGeneration_1.3.7    tinytex_0.29               fastmatch_1.1-0           
+[37] Rcpp_1.0.6                 cellranger_1.1.0           vctrs_0.3.6               
+[40] nlme_3.1-149               assertive.files_0.0-2      iterators_1.0.13          
+[43] timeDate_3043.102          gower_0.2.2                xfun_0.20                 
+[46] rvest_0.3.6                lifecycle_1.0.0            phangorn_2.5.5            
+[49] gtools_3.8.2               MASS_7.3-53                scales_1.1.1              
+[52] ipred_0.9-11               hms_1.0.0                  parallel_4.0.3            
+[55] expm_0.999-6               yaml_2.2.1                 rpart_4.1-15              
+[58] stringi_1.5.3              foreach_1.5.1              plotrix_3.8-1             
+[61] lava_1.6.9                 rlang_0.4.10               pkgconfig_2.0.3           
+[64] evaluate_0.14              assertive.properties_0.0-4 recipes_0.1.16            
+[67] labeling_0.4.2             tidyselect_1.1.0           plyr_1.8.6                
+[70] magrittr_2.0.1             R6_2.5.0                   magick_2.6.0              
+[73] generics_0.1.0             combinat_0.0-8             DBI_1.1.1                 
+[76] pillar_1.4.7               haven_2.3.1                withr_2.4.1               
+[79] assertive.numbers_0.0-2    survival_3.2-7             scatterplot3d_0.3-41      
+[82] nnet_7.3-14                modelr_0.1.8               crayon_1.4.0              
+[85] assertive.types_0.0-3      utf8_1.1.4                 tmvnsim_1.0-2             
+[88] rmarkdown_2.6              grid_4.0.3                 readxl_1.3.1              
+[91] data.table_1.14.0          ModelMetrics_1.2.2.2       reprex_1.0.0              
+[94] digest_0.6.27              numDeriv_2016.8-1.1        gridGraphics_0.5-1        
+[97] stats4_4.0.3               munsell_0.5.0              quadprog_1.5-8 
+
+
+

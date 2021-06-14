@@ -1,0 +1,51 @@
+---
+title: "core_pred_accuracy"
+output: html_document
+---
+
+
+```{r}
+library(ggplot2)
+library(tidyverse)
+
+wkdir="./00_collab/02_core_pred/09_model_acc/"
+
+cv_table_raw = read.table(file = paste0(wkdir, "/osat_bdis_cv_table.txt"), sep = "\t", header = T)
+#bad column names
+colnames(cv_table_raw) = c("Model","Train","Test","Accuracy")
+
+#need to split accuracy..
+#save as separate object, split out, sub, add as column
+acc_col = cv_table_raw$Accuracy
+stdev_vect = gsub("..* ","", acc_col)
+
+cv_table_raw$Accuracy = gsub(" ..*","",cv_table_raw$Accuracy)
+cv_table = cbind(cv_table_raw,stdev_vect)
+cv_table$Accuracy = as.numeric(cv_table$Accuracy)
+cv_table$stdev_vect = as.numeric(cv_table$stdev_vect)
+#hmm want it refactored somehow so reads left to right
+cv_table$Test = factor(cv_table$Test, levels = c("Osat_Bal","Osat","Bdis_Bal","Bdis"))
+
+acc_chart = cv_table %>% 
+  ggplot(aes(x = Train, y = Accuracy, color = Model)) +
+  geom_point(stat = "identity") +
+  geom_line() +
+  geom_errorbar(aes(ymin=Accuracy-stdev_vect, ymax=Accuracy+stdev_vect), width=.2,
+                 position=position_dodge(0.05)) +
+  coord_flip() +
+  theme_minimal() +
+  facet_grid(~Test) +
+  ylim(c(0.4,0.9))
+acc_chart
+
+width = 7
+height = 1.5
+pdf(file = paste0(wkdir,"/osat_bdis_cv_chart.pdf"), width=width, height=height)
+  acc_chart
+  dev.off()
+png(file = paste0(wkdir,"/osat_bdis_cv_chart.png"), width=width, height=height, units = "in", res = 300)
+  acc_chart
+  dev.off()
+
+```
+

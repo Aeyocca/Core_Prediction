@@ -1,0 +1,118 @@
+---
+title: "core_pred_dup_type"
+output: html_document
+---
+
+```{r}
+#rm(list=ls())
+library(tidyverse)
+library(ggplot2)
+library(multipanelfigure)
+
+#make bar chart of duplication type by class for each species
+wkdir="."
+#load in osat and bdis meta tables
+osat_meta = read.table(file = paste0(wkdir, "/osat_meta_21_02.txt"), sep = "\t", header = T)
+bdis_meta = read.table(file = paste0(wkdir, "/bdis_meta_21_02.txt"), sep = "\t", header = T)
+
+#save some memory
+osat_meta = osat_meta[,which(colnames(osat_meta) %in% c("Gene","Membership","Dup_Type"))]
+bdis_meta = bdis_meta[,which(colnames(bdis_meta) %in% c("Gene","Membership","Dup_Type"))]
+
+#convert to character
+#tidy up to proportions????? ugh how did I do this...
+#hmm can just manually calculate huh
+#Dup_Type Prop  Membership
+osat_dup_df = data.frame(Dup_type = character(),
+                         Prop = numeric(),
+                         Membership = character())
+dup_type_vect = c("Singleton","Dispersed","Proximal","Tandem","WGD")
+osat_ndisp = nrow(osat_meta[which(osat_meta$Membership == "Dispensable"),])
+osat_ncore = nrow(osat_meta[which(osat_meta$Membership == "Core"),])
+for (i in 1:length(dup_type_vect)) {
+  ntype_core = nrow(osat_meta[which(osat_meta$Dup_Type == (i-1) &
+                                      osat_meta$Membership == "Core"),])
+  row_df = data.frame(Dup_type = dup_type_vect[i], 
+                      Prop = ntype_core/osat_ncore, 
+                      Membership = "Core")
+  osat_dup_df = rbind(osat_dup_df,row_df)
+  ntype_disp = nrow(osat_meta[which(osat_meta$Dup_Type == (i-1) & 
+                                      osat_meta$Membership == "Dispensable"),])
+  row_df = data.frame(Dup_type = dup_type_vect[i], 
+                      Prop = ntype_disp/osat_ndisp, 
+                      Membership = "Dispensable")
+  osat_dup_df = rbind(osat_dup_df,row_df)
+}
+
+bdis_dup_df = data.frame(Dup_type = character(),
+                         Prop = numeric(),
+                         Membership = character())
+bdis_ndisp = nrow(bdis_meta[which(bdis_meta$Membership == "Dispensable"),])
+bdis_ncore = nrow(bdis_meta[which(bdis_meta$Membership == "Core"),])
+for (i in 1:length(dup_type_vect)) {
+  ntype_core = nrow(bdis_meta[which(bdis_meta$Dup_Type == (i-1) &
+                                      bdis_meta$Membership == "Core"),])
+  row_df = data.frame(Dup_type = dup_type_vect[i], 
+                      Prop = ntype_core/bdis_ncore, 
+                      Membership = "Core")
+  bdis_dup_df = rbind(bdis_dup_df,row_df)
+  ntype_disp = nrow(bdis_meta[which(bdis_meta$Dup_Type == (i-1) & 
+                                      bdis_meta$Membership == "Dispensable"),])
+  row_df = data.frame(Dup_type = dup_type_vect[i], 
+                      Prop = ntype_disp/bdis_ndisp, 
+                      Membership = "Dispensable")
+  bdis_dup_df = rbind(bdis_dup_df,row_df)
+}
+
+osat_title = expression(paste("Duplication Class distributions for ", italic("Oryza sativa")))
+osat_dup_bar = osat_dup_df %>% 
+  ggplot(aes(x = Dup_type, y = Prop, fill = Membership)) +
+  geom_bar(stat = "identity", position=position_dodge()) +
+  theme_minimal() +
+  scale_fill_manual(values=c("hotpink2","grey48")) +
+  ylab("Proportion") +
+  xlab("Duplication Class") +
+  ggtitle(osat_title)
+#osat_dup_bar
+
+bdis_title = expression(paste("Duplication Class distributions for ", italic("Brachypodium distachyon")))
+bdis_dup_bar = bdis_dup_df %>% 
+  ggplot(aes(x = Dup_type, y = Prop, fill = Membership)) +
+  geom_bar(stat = "identity", position=position_dodge()) +
+  theme_minimal() +
+  scale_fill_manual(values=c("hotpink2","grey48")) +
+  ylab("Proportion") +
+  xlab("Duplication Class") +
+  ggtitle(bdis_title)
+#bdis_dup_bar
+
+plot_width = 6
+plot_height = 4.75
+figure1 <- multi_panel_figure(
+  width=plot_width, height=plot_height, unit="inches",
+  columns = 1, rows = 2)
+
+figure1 %<>% fill_panel(
+  osat_dup_bar,
+  column = 1,
+  row = 1,
+  scaling = "fit")
+figure1 %<>% fill_panel(
+  bdis_dup_bar,
+  column = 1,
+  row = 2,
+  scaling = "fit")
+#figure1
+wkdir="./00_collab/02_core_pred/03_dup_analysis//"
+pdf(file = paste0(wkdir,"/osat_bdis_dup_bar.pdf"), width=plot_width, height=plot_height)
+  figure1
+  dev.off()
+png(file = paste0(wkdir,"/osat_bdis_dup_bar.png"), width=plot_width, height=plot_height, units = "in", res = 300)
+  figure1
+  dev.off()
+
+
+```
+
+
+

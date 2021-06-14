@@ -1,0 +1,884 @@
+---
+title: "core_pred_feat_dist"
+output: html_document
+---
+
+#tidy up code for feature distributions, both main figure 1 and supplementary figures
+
+#need to remove the figure legend, then stitch together, but how could we still get one figure legend?
+#do we need it?
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+
+wkdir="./00_collab/02_core_pred/02_feat_dist/"
+#load in osat and bdis meta tables
+osat_meta = read.table(file = paste0(wkdir, "/../osat_meta_21_04.txt"), sep = "\t", header = T)
+bdis_meta = read.table(file = paste0(wkdir, "/../bdis_meta_21_04_09.txt"), sep = "\t", header = T)
+
+#create separate graphs and stitch together
+plot_feature = function(df = df, bool_save = T, feature = character(), 
+                        ylimits = c(), species = character(), wkdir=character()) {
+  #boxplot and violin plot
+  Membership = "Membership"
+  feature_box = df %>% 
+    ggplot(aes_string(x = Membership, y = feature, fill = Membership)) +
+    geom_violin() +
+    geom_boxplot(alpha = 0.1) +
+    coord_cartesian(ylim = ylimits) +
+    scale_fill_manual(values=c("hotpink2","grey48")) +
+    theme_minimal() +
+    theme(legend.position = "none",
+          axis.text.x = element_blank(),
+          axis.title.x = element_blank())
+  #feature_box
+  
+  if (bool_save) {
+    height = 2
+    width = 2
+    pdf(paste0(wkdir, "/", species, "_", feature, "_dist.pdf"), height = height, width = width)
+      plot(feature_box)
+      dev.off()
+    png(paste0(wkdir, "/", species, "_", feature, "_dist.png"), height = height, width = width, res = 300, units = "in")
+      plot(feature_box)
+      dev.off()
+  } else {
+    return(feature_box)
+  }
+  
+}
+
+osat_Length_dist = plot_feature(df = osat_meta, bool_save = F, feature = "Length", species = "osat", wkdir = wkdir, ylimits = c(0,7000))
+osat_Exon_Count_dist = plot_feature(df = osat_meta, bool_save = F, feature = "Exon_Count", species = "osat", wkdir = wkdir, ylimits = c(0,25))
+osat_Exon_Length_dist = plot_feature(df = osat_meta, bool_save = F, feature = "Exon_Length", species = "osat", wkdir = wkdir, ylimits = c(0,5000))
+osat_Intron_Length_dist = plot_feature(df = osat_meta, bool_save = F, feature = "Intron_Length", species = "osat", wkdir = wkdir, ylimits = c(0,5000))
+osat_GC_Per_dist = plot_feature(df = osat_meta, bool_save = F, feature = "GC_Per", species = "osat", wkdir = wkdir, ylimits = c(0,1))
+
+bdis_Length_dist = plot_feature(df = bdis_meta, bool_save = F, feature = "Length", species = "bdis", wkdir = wkdir, ylimits = c(0,7000))
+bdis_Exon_Count_dist = plot_feature(df = bdis_meta, bool_save = F, feature = "Exon_Count", species = "bdis", wkdir = wkdir, ylimits = c(0,25))
+bdis_Exon_Length_dist = plot_feature(df = bdis_meta, bool_save = F, feature = "Exon_Length", species = "bdis", wkdir = wkdir, ylimits = c(0,5000))
+bdis_Intron_Length_dist = plot_feature(df = bdis_meta, bool_save = F, feature = "Intron_Length", species = "bdis", wkdir = wkdir, ylimits = c(0,5000))
+bdis_GC_Per_dist = plot_feature(df = bdis_meta, bool_save = F, feature = "GC_Per", species = "bdis", wkdir = wkdir, ylimits = c(0,1))
+
+#osat:
+#Exon_Count = c(0,25)
+#Exon_Length = c(0,5000)
+#Intron_Length = c(0,5000)
+#Length = c(0,5000)
+#TPM = c(0,100)
+#GC_Per = c(0,1)
+
+#bdis:
+#Exon_Count = c(0,25)
+#Exon_Length = c(0,5000)
+#Intron_Length = c(0,5000)
+#Length = c(0,5000)
+#GC_Per = c(0,1)
+
+```
+
+#investigate bdis accession feature distributions
+```{r}
+library(tidyverse)
+library(ggplot2)
+
+wkdir="./00_collab/02_core_pred/02_feat_dist/"
+#load in osat and bdis meta tables
+bdisA_meta = read.table(file = paste0(wkdir, "/../bdis_ABR2_meta_21_04_09.txt"), sep = "\t", header = T)
+
+#create separate graphs and stitch together
+plot_feature = function(df = df, bool_save = T, feature = character(), 
+                        ylimits = c(), species = character(), wkdir=character()) {
+  #boxplot and violin plot
+  Membership = "Membership"
+  feature_box = df %>% 
+    ggplot(aes_string(x = Membership, y = feature, fill = Membership)) +
+    geom_violin() +
+    geom_boxplot(alpha = 0.1) +
+    coord_cartesian(ylim = ylimits) +
+    scale_fill_manual(values=c("hotpink2","grey48")) +
+    theme_minimal() +
+    theme(legend.position = "none",
+          axis.text.x = element_blank(),
+          axis.title.x = element_blank())
+  #feature_box
+  
+  if (bool_save) {
+    height = 2
+    width = 2
+    pdf(paste0(wkdir, "/", species, "_", feature, "_dist.pdf"), height = height, width = width)
+      plot(feature_box)
+      dev.off()
+    png(paste0(wkdir, "/", species, "_", feature, "_dist.png"), height = height, width = width, res = 300, units = "in")
+      plot(feature_box)
+      dev.off()
+  } else {
+    return(feature_box)
+  }
+  
+}
+
+plot_feature(df = bdisA_meta, bool_save = T, feature = "Length", species = "bdisA", wkdir = wkdir, ylimits = c(0,7000))
+plot_feature(df = bdisA_meta, bool_save = T, feature = "Exon_Count", species = "bdisA", wkdir = wkdir, ylimits = c(0,25))
+plot_feature(df = bdisA_meta, bool_save = T, feature = "Exon_Length", species = "bdisA", wkdir = wkdir, ylimits = c(0,5000))
+plot_feature(df = bdisA_meta, bool_save = T, feature = "Intron_Length", species = "bdisA", wkdir = wkdir, ylimits = c(0,5000))
+plot_feature(df = bdisA_meta, bool_save = T, feature = "GC_Per", species = "bdisA", wkdir = wkdir, ylimits = c(0,1))
+
+```
+
+#stitch em together
+```{r}
+library(multipanelfigure)
+
+plot_width = 6.5
+plot_height = 3.5
+wkdir="./00_collab/02_core_pred/02_feat_dist/"
+
+figure1 <- multi_panel_figure(
+  width=plot_width, height=plot_height, unit='inches',
+  columns = 3, rows = 2)
+
+figure1 %<>% fill_panel(
+  osat_GC_Per_dist,
+  column = 1,
+  row = 1,
+  scaling = "fit")
+figure1 %<>% fill_panel(
+  osat_Length_dist,
+  column = 2,
+  row = 1,
+  scaling = "fit")
+figure1 %<>% fill_panel(
+  osat_Exon_Count_dist,
+  column = 3,
+  row = 1,
+  scaling = "fit")
+###################################################
+figure1 %<>% fill_panel(
+  bdis_GC_Per_dist,
+  column = 1,
+  row = 2,
+  scaling = "fit")
+figure1 %<>% fill_panel(
+  bdis_Length_dist,
+  column = 2,
+  row = 2,
+  scaling = "fit")
+figure1 %<>% fill_panel(
+  bdis_Exon_Count_dist,
+  column = 3,
+  row = 2,
+  scaling = "fit")
+
+#figure1
+pdf(file = paste0(wkdir,"/osat_bdis_feat_dist.pdf"), width=plot_width, height=plot_height)
+  figure1
+  dev.off()
+  
+png(file = paste0(wkdir,"/osat_bdis_feat_dist.png"), width=plot_width, height=plot_height, units = "in", res = 300)
+  figure1
+  dev.off()
+
+```
+
+#lets get bdis and osat on the same axis
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+
+wkdir="./00_collab/02_core_pred/02_feat_dist/"
+#load in osat and bdis meta tables
+osat_meta = read.table(file = paste0(wkdir, "/../osat_meta_21_04.txt"), sep = "\t", header = T)
+bdis_meta = read.table(file = paste0(wkdir, "/../bdis_meta_21_04_09.txt"), sep = "\t", header = T)
+
+#collect the features we will plot
+feat_vect = c("Membership", "Gene", "GC_Per", "Ortho_Ka_Ks", "Ortho_Ka", "Ortho_Ks", "Para_Ka_Ks", "Para_Ka",
+				 "Para_Ks", "Length", "Exon_Count", "Exon_Length", "Intron_Length", 
+				 "AA", "AC", "AG", "AT", "CA", "CC", "CG", "CT", "GA", "GC", "GG", "GT", 
+				 "TA", "TC", "TG", "TT")
+osat_meta = osat_meta[,which(colnames(osat_meta) %in% feat_vect)]
+bdis_meta = bdis_meta[,which(colnames(bdis_meta) %in% feat_vect)]
+
+#get into single dataframe with Species as a column...
+#add species column then rbind
+osat_meta$Species = rep("osat",nrow(osat_meta))
+bdis_meta$Species = rep("bdis",nrow(bdis_meta))
+
+osat_bdis_meta = rbind(osat_meta, bdis_meta)
+#osat_bdis_meta = rbind(osat_meta[,!(which(colnames(osat_meta) == "TPM"))],bdis_meta)
+
+#hmmm same plotting function above? Lets see how we want to handle species / membership differences
+plot_both_species = function(df = df, ylimits = c(), bool_save = T, feature = "",
+                             wkdir = "") {
+  Membership = "Membership"
+  Species = "Species"
+  species_out = "osat_bdis"
+  feat_dist = df %>% 
+    ggplot(aes_string(x = Species, y = feature, fill = Membership)) +
+    geom_violin() +
+    geom_boxplot(alpha = 0.1) +
+    coord_cartesian(ylim = ylimits) +
+    scale_fill_manual(values=c("hotpink2","grey48")) +
+    theme_minimal() +
+    theme(legend.position = "none")
+
+  if (bool_save) {
+    height = 2.5
+    width = 2
+    pdf(paste0(wkdir, "/", species_out, "_", feature, "_dist.pdf"), 
+        height = height, width = width)
+      plot(feat_dist)
+      dev.off()
+    png(paste0(wkdir, "/", species_out, "_", feature, "_dist.png"), 
+        height = height, width = width, res = 300, units = "in")
+      plot(feat_dist)
+      dev.off()
+  } else {
+    return(feat_dist)
+  }
+}
+
+#osat:
+#Exon_Count = c(0,15)
+#Exon_Length = c(0,5000)
+#Intron_Length = c(0,5000)
+#Length = c(0,7000)
+#GC_Per = c(0,1)
+
+osat_bdis_length = plot_both_species(df = osat_bdis_meta, bool_save = F, feature = "Length", 
+                  wkdir = wkdir, ylimits = c(0,7000))
+osat_bdis_ec = plot_both_species(df = osat_bdis_meta, bool_save = F, feature = "Exon_Count", 
+                  wkdir = wkdir, ylimits = c(0,15))
+osat_bdis_el = plot_both_species(df = osat_bdis_meta, bool_save = F, feature = "Exon_Length", 
+                  wkdir = wkdir, ylimits = c(0,5000))
+osat_bdis_il = plot_both_species(df = osat_bdis_meta, bool_save = F, feature = "Intron_Length", 
+                  wkdir = wkdir, ylimits = c(0,5000))
+osat_bdis_gc = plot_both_species(df = osat_bdis_meta, bool_save = F, feature = "GC_Per", 
+                  wkdir = wkdir, ylimits = c(0,1))
+
+osat_bdis_ortho_ka_ks = plot_both_species(df = osat_bdis_meta[which(osat_bdis_meta$Ortho_Ka_Ks <= 2),], 
+                                    bool_save = F, feature = "Ortho_Ka_Ks", wkdir = wkdir, ylimits = c(0,2))
+osat_bdis_ortho_ka = plot_both_species(df = osat_bdis_meta[which(osat_bdis_meta$Ortho_Ka <= 2),], 
+                                    bool_save = F, feature = "Ortho_Ka", wkdir = wkdir, ylimits = c(0,2))
+osat_bdis_ortho_ks = plot_both_species(df = osat_bdis_meta[which(osat_bdis_meta$Ortho_Ks <= 2),], 
+                                    bool_save = F, feature = "Ortho_Ks", wkdir = wkdir, ylimits = c(0,2))
+osat_bdis_para_ka_ks = plot_both_species(df = osat_bdis_meta[which(osat_bdis_meta$Para_Ka_Ks <= 2),], 
+                                    bool_save = F, feature = "Para_Ka_Ks", wkdir = wkdir, ylimits = c(0,2))
+osat_bdis_para_ka = plot_both_species(df = osat_bdis_meta[which(osat_bdis_meta$Para_Ka <= 2),], 
+                                    bool_save = F, feature = "Para_Ka", wkdir = wkdir, ylimits = c(0,2))
+osat_bdis_para_ks = plot_both_species(df = osat_bdis_meta[which(osat_bdis_meta$Para_Ks <= 2),], 
+                                    bool_save = F, feature = "Para_Ks", wkdir = wkdir, ylimits = c(0,2))
+
+
+#dinucleotide proportions
+#how did I do this for AA?
+#Gather to tidy I believe
+dinuc_list = c("AA","AT","AG","AC","TA","TT","TG","TC","GA","GT",
+               "GG","GC","CA","CT","CG","CC")
+osat_bdis_dinuc_tidy = osat_bdis_meta %>% 
+  gather(dinuc_list, key = "Dinucleotide", value = "Proportion")
+
+#owee thats a biiggun
+osat_bdis_dinuc_boxplot = osat_bdis_dinuc_tidy %>% 
+  ggplot(aes(x = Dinucleotide, y = Proportion, fill = Membership)) +
+  geom_violin() +
+  geom_boxplot(alpha = 0.1) +
+  scale_fill_manual(values=c("hotpink2","grey48")) +
+  theme_minimal() +
+  ggtitle("Proportion of dinucleotide pairs across CDS sequences") +
+  facet_wrap(~Species, ncol = 1)
+osat_bdis_dinuc_boxplot
+
+height = 4
+width = 7
+pdf(paste0(wkdir, "/osat_bdis_aa_prop_dist.pdf"), 
+    height = height, width = width)
+  plot(osat_bdis_dinuc_boxplot)
+  dev.off()
+png(paste0(wkdir, "/osat_bdis_aa_prop_dist.png"), 
+    height = height, width = width, res = 300, units = "in")
+  plot(osat_bdis_dinuc_boxplot)
+  dev.off()
+
+```
+
+#stack above together
+```{r}
+#install.packages("multipanelfigure")
+library(multipanelfigure)
+
+plot_width = 6.5
+plot_height = 7
+wkdir="./00_collab/02_core_pred/02_feat_dist/"
+#?multi_panel_figure()
+#?fill_panel()
+figure1 <- multi_panel_figure(
+  width=plot_width, height=plot_height, unit="inches",
+  columns = 3, rows = 4)
+
+figure1 %<>% fill_panel(
+  osat_bdis_length,
+  column = 1,
+  row = 1)
+figure1 %<>% fill_panel(
+  osat_bdis_gc,
+  column = 2,
+  row = 1)
+figure1 %<>% fill_panel(
+  osat_bdis_ec,
+  column = 3,
+  row = 1,
+  scaling = "fit")
+figure1 %<>% fill_panel(
+  osat_bdis_el,
+  column = 1,
+  row = 2,
+  scaling = "fit")
+figure1 %<>% fill_panel(
+  osat_bdis_il,
+  column = 2,
+  row = 2,
+  scaling = "fit")
+figure1 %<>% fill_panel(
+  osat_bdis_ortho_ka_ks,
+  column = 3,
+  row = 2,
+  scaling = "fit")
+figure1 %<>% fill_panel(
+  osat_bdis_ortho_ka,
+  column = 1,
+  row = 3,
+  scaling = "fit")
+figure1 %<>% fill_panel(
+  osat_bdis_ortho_ks,
+  column = 2,
+  row = 3,
+  scaling = "fit")
+
+figure1 %<>% fill_panel(
+  osat_bdis_para_ka_ks,
+  column = 3,
+  row = 3,
+  scaling = "fit")
+figure1 %<>% fill_panel(
+  osat_bdis_para_ka,
+  column = 1,
+  row = 4,
+  scaling = "fit")
+figure1 %<>% fill_panel(
+  osat_bdis_para_ks,
+  column = 2,
+  row = 4,
+  scaling = "fit")
+
+
+
+#figure1
+pdf(file = paste0(wkdir,"/osat_bdis_feat_dist_scale.pdf"), width=plot_width, height=plot_height)
+  figure1
+  dev.off()
+  
+png(file = paste0(wkdir,"/osat_bdis_feat_dist_scale.png"), width=plot_width, height=plot_height, units = "in", res = 300)
+  figure1
+  dev.off()
+
+```
+
+#get ks as a histogram with many many bins like in some wgd dating papers
+```{r}
+library(tidyverse)
+library(ggplot2)
+
+wkdir="./00_collab/02_core_pred/02_feat_dist/"
+#load in osat and bdis meta tables
+osat_meta = read.table(file = paste0(wkdir, "/osat_meta_osat_cds.txt"), sep = "\t", header = T)
+
+ks_hist = osat_meta %>% 
+  ggplot(aes(x = Ks, fill = Membership)) +
+  geom_histogram(bins = 100) +
+  xlim(c(0,2)) +
+  theme_minimal() +
+  ggtitle("Ks Histogram for Oryza sativa")
+ks_hist
+
+ks_violin = osat_meta %>% 
+  ggplot(aes(x = Membership, y = Ks, fill = Membership)) +
+  geom_violin() +
+  geom_boxplot(alpha = 0.1) +
+  ylim(c(0,2)) +
+  scale_fill_manual(values=c("hotpink2","grey48"))
+ks_violin
+
+#paralogs: 19974 Ks > 2
+#orthologs: 17573
+osat_meta_ortho = read.table(file = paste0(wkdir, "/osat_meta_bdis_cds.txt"), sep = "\t", header = T)
+nrow(osat_meta_ortho[which(osat_meta_ortho$Ks <= 2),])
+
+#so if I cut it here maybe will be better? man I'm really getting caught up in this when I know damn well
+#its not gonna matter too much
+#also should do diff dist for ks giving a cutoff instead of coord cartesian? Maybe just do the histogram
+#but cant see the diffs very well with just the histogram
+
+```
+
+#duplication type analysis
+```{r}
+#rm(list=ls())
+library(tidyverse)
+library(ggplot2)
+
+#make bar chart of duplication type by class for each species
+wkdir="./00_collab/02_core_pred/02_feat_dist/"
+#load in osat and bdis meta tables
+osat_meta = read.table(file = paste0(wkdir, "/osat_meta_21_02.txt"), sep = "\t", header = T)
+bdis_meta = read.table(file = paste0(wkdir, "/bdis_meta_21_02.txt"), sep = "\t", header = T)
+
+#save some memory
+osat_meta = osat_meta[,which(colnames(osat_meta) %in% c("Gene","Membership","Dup_Type"))]
+bdis_meta = bdis_meta[,which(colnames(bdis_meta) %in% c("Gene","Membership","Dup_Type"))]
+
+#convert to character
+#tidy up to proportions????? ugh how did I do this...
+#hmm can just manually calculate huh
+#Dup_Type Prop  Membership
+osat_dup_df = data.frame(Dup_type = character(),
+                         Prop = numeric(),
+                         Membership = character())
+dup_type_vect = c("Singleton","Dispersed","Proximal","Tandem","WGD")
+osat_ndisp = nrow(osat_meta[which(osat_meta$Membership == "Dispensable"),])
+osat_ncore = nrow(osat_meta[which(osat_meta$Membership == "Core"),])
+for (i in 1:length(dup_type_vect)) {
+  ntype_core = nrow(osat_meta[which(osat_meta$Dup_Type == (i-1) &
+                                      osat_meta$Membership == "Core"),])
+  row_df = data.frame(Dup_type = dup_type_vect[i], 
+                      Prop = ntype_core/osat_ncore, 
+                      Membership = "Core")
+  osat_dup_df = rbind(osat_dup_df,row_df)
+  ntype_disp = nrow(osat_meta[which(osat_meta$Dup_Type == (i-1) & 
+                                      osat_meta$Membership == "Dispensable"),])
+  row_df = data.frame(Dup_type = dup_type_vect[i], 
+                      Prop = ntype_disp/osat_ndisp, 
+                      Membership = "Dispensable")
+  osat_dup_df = rbind(osat_dup_df,row_df)
+}
+
+bdis_dup_df = data.frame(Dup_type = character(),
+                         Prop = numeric(),
+                         Membership = character())
+bdis_ndisp = nrow(bdis_meta[which(bdis_meta$Membership == "Dispensable"),])
+bdis_ncore = nrow(bdis_meta[which(bdis_meta$Membership == "Core"),])
+for (i in 1:length(dup_type_vect)) {
+  ntype_core = nrow(bdis_meta[which(bdis_meta$Dup_Type == (i-1) &
+                                      bdis_meta$Membership == "Core"),])
+  row_df = data.frame(Dup_type = dup_type_vect[i], 
+                      Prop = ntype_core/bdis_ncore, 
+                      Membership = "Core")
+  bdis_dup_df = rbind(bdis_dup_df,row_df)
+  ntype_disp = nrow(bdis_meta[which(bdis_meta$Dup_Type == (i-1) & 
+                                      bdis_meta$Membership == "Dispensable"),])
+  row_df = data.frame(Dup_type = dup_type_vect[i], 
+                      Prop = ntype_disp/bdis_ndisp, 
+                      Membership = "Dispensable")
+  bdis_dup_df = rbind(bdis_dup_df,row_df)
+}
+
+osat_dup_bar = osat_dup_df %>% 
+  ggplot(aes(x = Dup_type, y = Prop, fill = Membership)) +
+  geom_bar(stat = "identity", position=position_dodge()) +
+  theme_minimal() +
+  scale_fill_manual(values=c("hotpink2","grey48")) +
+  ylab("Proportion") +
+  xlab("Duplication Class") +
+  ggtitle("Duplication Class distributions for Oryza sativa")
+#osat_dup_bar
+
+bdis_dup_bar = bdis_dup_df %>% 
+  ggplot(aes(x = Dup_type, y = Prop, fill = Membership)) +
+  geom_bar(stat = "identity", position=position_dodge()) +
+  theme_minimal() +
+  scale_fill_manual(values=c("hotpink2","grey48")) +
+  ylab("Proportion") +
+  xlab("Duplication Class") +
+  ggtitle("Duplication Class distributions for Brachypodium distachyon")
+#bdis_dup_bar
+
+plot_width = 6
+plot_height = 4.75
+figure1 <- multi_panel_figure(
+  width=plot_width, height=plot_height, unit="inches",
+  columns = 1, rows = 2)
+
+figure1 %<>% fill_panel(
+  osat_dup_bar,
+  column = 1,
+  row = 1,
+  scaling = "fit")
+figure1 %<>% fill_panel(
+  bdis_dup_bar,
+  column = 1,
+  row = 2,
+  scaling = "fit")
+#figure1
+wkdir="./00_collab/02_core_pred/02_feat_dist/"
+pdf(file = paste0(wkdir,"/osat_bdis_dup_bar.pdf"), width=plot_width, height=plot_height)
+  figure1
+  dev.off()
+png(file = paste0(wkdir,"/osat_bdis_dup_bar.png"), width=plot_width, height=plot_height, units = "in", res = 300)
+  figure1
+  dev.off()
+
+
+```
+
+#see if there is a difference in MK ratio between species
+```{r}
+#rm(list=ls())
+library(tidyverse)
+library(ggplot2)
+
+#make bar chart of duplication type by class for each species
+wkdir="./00_collab/02_core_pred/02_feat_dist/"
+#load in osat and bdis meta tables
+osat_meta = read.table(file = paste0(wkdir, "/osat_meta_21_02.txt"), sep = "\t", header = T)
+bdis_meta = read.table(file = paste0(wkdir, "/bdis_meta_21_02.txt"), sep = "\t", header = T)
+
+#NI for neutrality index
+#though not at all neutrality index cuz thats polymorphism rate measurement and we are doing intragenomic
+#counting... yea I'm calculating a fake number huh...
+osat_meta = osat_meta %>% 
+  mutate(NI = ifelse(Para_Ka_Ks == 99, 99, 
+                     ifelse(Ortho_Ka_Ks == 99, 99,
+                            Para_Ka_Ks / Ortho_Ka_Ks)))
+bdis_meta = bdis_meta %>% 
+  mutate(NI = ifelse(Para_Ka_Ks == 99, 99, 
+                     ifelse(Ortho_Ka_Ks == 99, 99,
+                            Para_Ka_Ks / Ortho_Ka_Ks)))
+
+osat_ni_dist = osat_meta %>% 
+  ggplot(aes(x = Membership, y = NI, fill = Membership)) +
+  geom_violin() +
+  geom_boxplot(alpha = 0.1) +
+  ylim(c(0,3))
+osat_ni_dist
+
+bdis_ni_dist = bdis_meta %>% 
+  ggplot(aes(x = Membership, y = NI, fill = Membership)) +
+  geom_violin() +
+  geom_boxplot(alpha = 0.1) +
+  ylim(c(0,3))
+bdis_ni_dist
+
+#Different but pretty close, don't think it would add much
+```
+
+#04-08-2021
+#going through reviewers comments,
+#incredibly kind reviewer pointed out an embarrasing error in GC percentage calc and didn't destroy me for it, so feeling energized to fix the mistake
+#hmmm go through earlier and change the input file, or copy paste code and remake here?
+#think I will go back earlier and change things, but lets proof my new gc percentage calc
+```{r}
+library(tidyverse)
+library(ggplot2)
+
+wkdir="./00_collab/02_core_pred/02_feat_dist/"
+#load in osat and bdis meta tables
+osat_meta = read.table(file = paste0(wkdir, "/../osat_meta_21_04.txt"), sep = "\t", header = T)
+
+plot_feature = function(df = df, bool_save = T, feature = character(), 
+                        ylimits = c(), species = character(), wkdir=character()) {
+  #boxplot and violin plot
+  Membership = "Membership"
+  feature_box = df %>% 
+    ggplot(aes_string(x = Membership, y = feature, fill = Membership)) +
+    geom_violin() +
+    geom_boxplot(alpha = 0.1) +
+    coord_cartesian(ylim = ylimits) +
+    scale_fill_manual(values=c("hotpink2","grey48")) +
+    theme_minimal() +
+    theme(legend.position = "none",
+          axis.text.x = element_blank(),
+          axis.title.x = element_blank())
+  #feature_box
+  
+  if (bool_save) {
+    height = 2
+    width = 2
+    pdf(paste0(wkdir, "/", species, "_", feature, "_dist.pdf"), height = height, width = width)
+      plot(feature_box)
+      dev.off()
+    png(paste0(wkdir, "/", species, "_", feature, "_dist.png"), height = height, width = width, res = 300, units = "in")
+      plot(feature_box)
+      dev.off()
+  } else {
+    return(feature_box)
+  }
+  
+}
+
+gc_plot = plot_feature(df = osat_meta, bool_save = F, feature = "GC_Per", species = "osat", wkdir = wkdir, ylimits = c(0,1))
+gc_plot
+
+```
+
+#04-16-2021
+#compare first intron length and gc comp
+```{r}
+library(ggplot2)
+
+wkdir="./00_collab/02_core_pred/10_first_intron//"
+#load in osat and bdis meta tables
+osat_meta = read.table(file = paste0(wkdir, "/osat_meta_21_04_16.txt"), sep = "\t", header = T)
+bdis_meta = read.table(file = paste0(wkdir, "/bdis_meta_21_04_16.txt"), sep = "\t", header = T)
+
+plot_feature = function(df = df, bool_save = T, feature = character(), 
+                        ylimits = c(), species = character(), wkdir=character()) {
+  #boxplot and violin plot
+  Membership = "Membership"
+  feature_box = df %>% 
+    ggplot(aes_string(x = Membership, y = feature, fill = Membership)) +
+    geom_violin() +
+    geom_boxplot(alpha = 0.1) +
+    coord_cartesian(ylim = ylimits) +
+    scale_fill_manual(values=c("hotpink2","grey48")) +
+    theme_minimal() +
+    theme(legend.position = "none",
+          axis.text.x = element_blank(),
+          axis.title.x = element_blank())
+  #feature_box
+  
+  if (bool_save) {
+    height = 2
+    width = 2
+    pdf(paste0(wkdir, "/", species, "_", feature, "_dist.pdf"), height = height, width = width)
+      plot(feature_box)
+      dev.off()
+    png(paste0(wkdir, "/", species, "_", feature, "_dist.png"), height = height, width = width, res = 300, units = "in")
+      plot(feature_box)
+      dev.off()
+  } else {
+    return(feature_box)
+  }
+  
+}
+
+osat_fi_length_plot = plot_feature(df = osat_meta, bool_save = F, feature = "Intron_one_Length", species = "osat", wkdir = wkdir, ylimits = c(0,3000))
+osat_fi_length_plot
+bdis_fi_length_plot = plot_feature(df = bdis_meta, bool_save = F, feature = "Intron_one_Length", species = "bdis", wkdir = wkdir, ylimits = c(0,3000))
+bdis_fi_length_plot
+
+osat_fi_gc_plot = plot_feature(df = osat_meta[which(osat_meta$Intron_one_GC != 0),], bool_save = F, feature = "Intron_one_GC", species = "osat", wkdir = wkdir, ylimits = c(0,1))
+osat_fi_gc_plot
+bdis_fi_gc_plot = plot_feature(df = bdis_meta[which(bdis_meta$Intron_one_GC != 0),], bool_save = F, feature = "Intron_one_GC", species = "bdis", wkdir = wkdir, ylimits = c(0,1))
+bdis_fi_gc_plot
+
+plot_width = 2
+plot_height = 2
+png(file = paste0(wkdir,"/osat_fi_length_21_04_16.png"), width=plot_width, height=plot_height, units = "in", res = 300)
+  osat_fi_length_plot
+  dev.off()
+png(file = paste0(wkdir,"/osat_fi_gc_21_04_16.png"), width=plot_width, height=plot_height, units = "in", res = 300)
+  osat_fi_gc_plot
+  dev.off()
+png(file = paste0(wkdir,"/bdis_fi_length_21_04_16.png"), width=plot_width, height=plot_height, units = "in", res = 300)
+  bdis_fi_length_plot
+  dev.off()
+png(file = paste0(wkdir,"/bdis_fi_gc_21_04_16.png"), width=plot_width, height=plot_height, units = "in", res = 300)
+  bdis_fi_gc_plot
+  dev.off()
+```
+
+#remake figure 1:
+#- GC per, gene length, and exon count
+# fix axis titles for full spelling
+```{r}
+library(tidyverse)
+library(ggplot2)
+
+wkdir="./00_collab/02_core_pred/02_feat_dist/"
+
+osat_meta = read.table(file = paste0(wkdir,"/../osat_meta_21_04_27.txt"), sep = "\t", header = T)
+bdis_meta = read.table(file = paste0(wkdir,"/../bdis_meta_21_04_27.txt"), sep = "\t", header = T)
+
+######GC PERCENTAGE
+osat_gc = osat_meta %>% 
+  ggplot(aes(x = Membership, y = GC_Per, fill = Membership)) +
+  geom_violin() +
+  geom_boxplot(alpha = 0.1) +
+  coord_cartesian(ylim = c(0,1)) +
+  scale_fill_manual(values=c("hotpink2","grey48")) +
+  theme_minimal() +
+  ylab("GC percentage") +
+  theme(legend.position = "none",
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank())
+bdis_gc = bdis_meta %>% 
+  ggplot(aes(x = Membership, y = GC_Per, fill = Membership)) +
+  geom_violin() +
+  geom_boxplot(alpha = 0.1) +
+  coord_cartesian(ylim = c(0,1)) +
+  scale_fill_manual(values=c("hotpink2","grey48")) +
+  theme_minimal() +
+  ylab("GC percentage") +
+  theme(legend.position = "none",
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank())
+#####GENE LENGTH
+osat_gl = osat_meta %>% 
+  ggplot(aes(x = Membership, y = Length, fill = Membership)) +
+  geom_violin() +
+  geom_boxplot(alpha = 0.1) +
+  coord_cartesian(ylim = c(0,10000)) +
+  scale_fill_manual(values=c("hotpink2","grey48")) +
+  theme_minimal() +
+  ylab("Gene length") +
+  theme(legend.position = "none",
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank())
+bdis_gl = bdis_meta %>% 
+  ggplot(aes(x = Membership, y = Length, fill = Membership)) +
+  geom_violin() +
+  geom_boxplot(alpha = 0.1) +
+  coord_cartesian(ylim = c(0,10000)) +
+  scale_fill_manual(values=c("hotpink2","grey48")) +
+  theme_minimal() +
+  ylab("GC percentage") +
+  theme(legend.position = "none",
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank())
+######EXON COUNT
+osat_ec = osat_meta %>% 
+  ggplot(aes(x = Membership, y = Exon_Count, fill = Membership)) +
+  geom_violin() +
+  geom_boxplot(alpha = 0.1) +
+  coord_cartesian(ylim = c(0,20)) +
+  scale_fill_manual(values=c("hotpink2","grey48")) +
+  theme_minimal() +
+  ylab("Exon count") +
+  theme(legend.position = "none",
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank())
+bdis_ec = bdis_meta %>% 
+  ggplot(aes(x = Membership, y = Exon_Count, fill = Membership)) +
+  geom_violin() +
+  geom_boxplot(alpha = 0.1) +
+  coord_cartesian(ylim = c(0,20)) +
+  scale_fill_manual(values=c("hotpink2","grey48")) +
+  theme_minimal() +
+  ylab("Exon count") +
+  theme(legend.position = "none",
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank())
+
+library(multipanelfigure)
+
+plot_width = 6.5
+plot_height = 3.5
+wkdir="./00_collab/02_core_pred/02_feat_dist/"
+
+figure1 <- multi_panel_figure(
+  width=plot_width, height=plot_height, unit='inches',
+  columns = 3, rows = 2)
+
+figure1 %<>% fill_panel(
+  osat_gc,
+  column = 1,
+  row = 1,
+  scaling = "fit")
+figure1 %<>% fill_panel(
+  bdis_gc,
+  column = 1,
+  row = 2,
+  scaling = "fit")
+
+figure1 %<>% fill_panel(
+  osat_gl,
+  column = 2,
+  row = 1,
+  scaling = "fit")
+figure1 %<>% fill_panel(
+  bdis_gl,
+  column = 2,
+  row = 2,
+  scaling = "fit")
+
+figure1 %<>% fill_panel(
+  osat_ec,
+  column = 3,
+  row = 1,
+  scaling = "fit")
+figure1 %<>% fill_panel(
+  bdis_ec,
+  column = 3,
+  row = 2,
+  scaling = "fit")
+
+pdf(file = paste0(wkdir,"/osat_bdis_fig_1_21_04_28.pdf"), width=plot_width, height=plot_height)
+  figure1
+  dev.off()
+  
+png(file = paste0(wkdir,"/osat_bdis_fig_1_21_04_28.png"), width=plot_width, height=plot_height, units = "in", res = 300)
+  figure1
+  dev.off()
+
+```
+
+
+
+sessionInfo()
+R version 4.0.3 (2020-10-10)
+Platform: x86_64-apple-darwin17.0 (64-bit)
+Running under: macOS Catalina 10.15.7
+
+Matrix products: default
+BLAS:   /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/4.0/Resources/lib/libRlapack.dylib
+
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+ [1] multipanelfigure_2.1.2 gridExtra_2.3          e1071_1.7-6            caret_6.0-86          
+ [5] lattice_0.20-41        forcats_0.5.1          stringr_1.4.0          dplyr_1.0.4           
+ [9] purrr_0.3.4            readr_1.4.0            tidyr_1.1.2            tibble_3.0.6          
+[13] ggplot2_3.3.3          tidyverse_1.3.0        phytools_0.7-70        maps_3.3.0            
+[17] ape_5.4-1             
+
+loaded via a namespace (and not attached):
+ [1] assertive.base_0.0-9       colorspace_2.0-0           ellipsis_0.3.1            
+ [4] class_7.3-17               fs_1.5.0                   rstudioapi_0.13           
+ [7] proxy_0.4-25               farver_2.0.3               prodlim_2019.11.13        
+[10] fansi_0.4.2                lubridate_1.7.9.2          xml2_1.3.2                
+[13] codetools_0.2-16           splines_4.0.3              mnormt_2.0.2              
+[16] knitr_1.31                 jsonlite_1.7.2             pROC_1.17.0.1             
+[19] broom_0.7.4                dbplyr_2.1.0               compiler_4.0.3            
+[22] httr_1.4.2                 backports_1.2.1            assertthat_0.2.1          
+[25] Matrix_1.2-18              cli_2.4.0                  htmltools_0.5.1.1         
+[28] tools_4.0.3                igraph_1.2.6               coda_0.19-4               
+[31] gtable_0.3.0               glue_1.4.2                 reshape2_1.4.4            
+[34] clusterGeneration_1.3.7    tinytex_0.29               fastmatch_1.1-0           
+[37] Rcpp_1.0.6                 cellranger_1.1.0           vctrs_0.3.6               
+[40] nlme_3.1-149               assertive.files_0.0-2      iterators_1.0.13          
+[43] timeDate_3043.102          gower_0.2.2                xfun_0.20                 
+[46] rvest_0.3.6                lifecycle_1.0.0            phangorn_2.5.5            
+[49] gtools_3.8.2               MASS_7.3-53                scales_1.1.1              
+[52] ipred_0.9-11               hms_1.0.0                  parallel_4.0.3            
+[55] expm_0.999-6               yaml_2.2.1                 rpart_4.1-15              
+[58] stringi_1.5.3              foreach_1.5.1              plotrix_3.8-1             
+[61] lava_1.6.9                 rlang_0.4.10               pkgconfig_2.0.3           
+[64] evaluate_0.14              assertive.properties_0.0-4 recipes_0.1.16            
+[67] labeling_0.4.2             tidyselect_1.1.0           plyr_1.8.6                
+[70] magrittr_2.0.1             R6_2.5.0                   magick_2.6.0              
+[73] generics_0.1.0             combinat_0.0-8             DBI_1.1.1                 
+[76] pillar_1.4.7               haven_2.3.1                withr_2.4.1               
+[79] assertive.numbers_0.0-2    survival_3.2-7             scatterplot3d_0.3-41      
+[82] nnet_7.3-14                modelr_0.1.8               crayon_1.4.0              
+[85] assertive.types_0.0-3      utf8_1.1.4                 tmvnsim_1.0-2             
+[88] rmarkdown_2.6              grid_4.0.3                 readxl_1.3.1              
+[91] data.table_1.14.0          ModelMetrics_1.2.2.2       reprex_1.0.0              
+[94] digest_0.6.27              numDeriv_2016.8-1.1        gridGraphics_0.5-1        
+[97] stats4_4.0.3               munsell_0.5.0              quadprog_1.5-8 

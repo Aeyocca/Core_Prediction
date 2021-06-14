@@ -1,0 +1,992 @@
+---
+title: "core_pred_feat_imp"
+output: html_document
+---
+
+#plot some feature importances for ML models
+
+#gather feature importances into single dataframe
+#dissect: balance vs unbalancing
+#model typ
+#species
+```{r}
+library(tidyverse)
+library(ggplot2)
+
+#hmmmmm gotta manually load thingies in huh
+wkdir = "./00_collab/02_core_pred/08_feat_imp/"
+
+rft_osat_unbal = read.table(file = paste0(wkdir, "rft_feat_imp_osat.csv"), sep = ",", header = T)
+rft_osat_bal = read.table(file = paste0(wkdir, "rft_feat_imp_osat_bal.csv"), sep = ",", header = T)
+rft_bdis_unbal = read.table(file = paste0(wkdir, "rft_feat_imp_bdis.csv"), sep = ",", header = T)
+rft_bdis_bal = read.table(file = paste0(wkdir, "rft_feat_imp_bdis_bal.csv"), sep = ",", header = T)
+svc_osat_unbal = read.table(file = paste0(wkdir, "svc_feat_imp_osat.csv"), sep = ",", header = T)
+svc_osat_bal = read.table(file = paste0(wkdir, "svc_feat_imp_osat_bal.csv"), sep = ",", header = T)
+svc_bdis_unbal = read.table(file = paste0(wkdir, "svc_feat_imp_bdis.csv"), sep = ",", header = T)
+svc_bdis_bal = read.table(file = paste0(wkdir, "svc_feat_imp_bdis_bal.csv"), sep = ",", header = T)
+
+rft_osat_unbal$Species = rep("Osat", nrow(rft_osat_unbal))
+rft_osat_bal$Species = rep("Osat", nrow(rft_osat_bal))
+rft_bdis_unbal$Species = rep("Bdis", nrow(rft_bdis_unbal))
+rft_bdis_bal$Species = rep("Bdis", nrow(rft_bdis_bal))
+svc_osat_unbal$Species = rep("Osat", nrow(svc_osat_unbal))
+svc_osat_bal$Species = rep("Osat", nrow(svc_osat_bal))
+svc_bdis_unbal$Species = rep("Bdis", nrow(svc_bdis_unbal))
+svc_bdis_bal$Species = rep("Bdis", nrow(svc_bdis_bal))
+
+rft_osat_unbal$Model = rep("RFT", nrow(rft_osat_unbal))
+rft_osat_bal$Model = rep("RFT", nrow(rft_osat_bal))
+rft_bdis_unbal$Model = rep("RFT", nrow(rft_bdis_unbal))
+rft_bdis_bal$Model = rep("RFT", nrow(rft_bdis_bal))
+svc_osat_unbal$Model = rep("SVC", nrow(svc_osat_unbal))
+svc_osat_bal$Model = rep("SVC", nrow(svc_osat_bal))
+svc_bdis_unbal$Model = rep("SVC", nrow(svc_bdis_unbal))
+svc_bdis_bal$Model = rep("SVC", nrow(svc_bdis_bal))
+
+rft_osat_unbal$Balance = rep("Unbalanced", nrow(rft_osat_unbal))
+rft_osat_bal$Balance = rep("Balanced", nrow(rft_osat_bal))
+rft_bdis_unbal$Balance = rep("Unbalanced", nrow(rft_bdis_unbal))
+rft_bdis_bal$Balance = rep("Balanced", nrow(rft_bdis_bal))
+svc_osat_unbal$Balance = rep("Unbalanced", nrow(svc_osat_unbal))
+svc_osat_bal$Balance = rep("Balanced", nrow(svc_osat_bal))
+svc_bdis_unbal$Balance = rep("Unbalanced", nrow(svc_bdis_unbal))
+svc_bdis_bal$Balance = rep("Balanced", nrow(svc_bdis_bal))
+
+#normalize svc values? (make relative)
+svc_osat_unbal = svc_osat_unbal %>% 
+  mutate(Importance = abs(Importance)/sum(abs(svc_osat_unbal$Importance)))
+svc_osat_bal = svc_osat_bal %>% 
+  mutate(Importance = abs(Importance)/sum(abs(svc_osat_bal$Importance)))
+svc_bdis_unbal = svc_bdis_unbal %>% 
+  mutate(Importance = abs(Importance)/sum(abs(svc_bdis_unbal$Importance)))
+svc_bdis_bal = svc_bdis_bal %>% 
+  mutate(Importance = abs(Importance)/sum(abs(svc_bdis_bal$Importance)))
+
+feat_imp_dict = rbind(rft_osat_unbal, rft_osat_bal, rft_bdis_unbal,
+                      rft_bdis_bal, svc_osat_unbal, svc_osat_bal,
+                      svc_bdis_unbal, svc_bdis_bal)
+
+feat_imp_dict = feat_imp_dict %>% 
+  mutate(Abs_Imp = abs(Importance))
+
+feat_dist = feat_imp_dict %>% 
+  ggplot(aes(x = Features, y = Abs_Imp, color = Abs_Imp)) +
+  geom_point(aes(shape = Balance)) +
+  facet_grid(Model ~ Species) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 70)) +
+  scale_color_gradient(low="blue", high="red") +
+  coord_flip() +
+  ylab("Importance Score") +
+  xlab("Feature")
+feat_dist
+#Hmmm I can normalize the svc measures to make them relative also
+plot_width = 6
+plot_height = 8
+pdf(file = paste0(wkdir,"/osat_bdis_svc_rft_feat_imp.pdf"), width=plot_width, height=plot_height)
+  feat_dist
+  dev.off()
+png(file = paste0(wkdir,"/osat_bdis_svc_rft_feat_imp.png"), width=plot_width, height=plot_height, units = "in", res = 300)
+  feat_dist
+  dev.off()
+
+#Alrighty, I think the best thing will be to just make separate graphs
+#four diff graphs, sorted by imp score? Or sort unbalanced, show balanced
+rft_osat = feat_imp_dict[which(feat_imp_dict$Species == "Osat" & feat_imp_dict$Model == "RFT"),]
+rft_osat = rft_osat[order(rft_osat$Abs_Imp, decreasing = TRUE),]  
+feat_dist_rft_osat = rft_osat %>% 
+  ggplot(aes(x = Features, y = Abs_Imp, color = Abs_Imp)) +
+  geom_point(aes(shape = Balance)) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 70)) +
+  coord_flip() +
+  scale_color_gradient(low="blue", high="red") +
+  ggtitle("Feature Importance for Osat RF")
+#feat_dist
+
+svc_osat = feat_imp_dict[which(feat_imp_dict$Species == "Osat" & feat_imp_dict$Model == "SVC"),]
+svc_osat = svc_osat[order(svc_osat$Abs_Imp, decreasing = TRUE),]  
+feat_dist_svc_osat = svc_osat %>% 
+  ggplot(aes(x = Features, y = Abs_Imp, color = Abs_Imp)) +
+  geom_point(aes(shape = Balance)) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 70)) +
+  coord_flip() +
+  scale_color_gradient(low="blue", high="red") +
+  ggtitle("Feature Importance for Osat SVM")
+
+svc_bdis = feat_imp_dict[which(feat_imp_dict$Species == "Bdis" & feat_imp_dict$Model == "SVC"),]
+svc_bdis = svc_bdis[order(svc_bdis$Abs_Imp, decreasing = TRUE),]  
+feat_dist_svc_bdis = svc_bdis %>% 
+  ggplot(aes(x = Features, y = Abs_Imp, color = Abs_Imp)) +
+  geom_point(aes(shape = Balance)) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 70)) +
+  coord_flip() +
+  scale_color_gradient(low="blue", high="red") +
+  ggtitle("Feature Importance for Bdis SVM")
+
+rft_bdis = feat_imp_dict[which(feat_imp_dict$Species == "Bdis" & feat_imp_dict$Model == "RFT"),]
+rft_bdis = rft_bdis[order(rft_bdis$Abs_Imp, decreasing = TRUE),]  
+feat_dist_rft_bdis = rft_bdis %>% 
+  ggplot(aes(x = Features, y = Abs_Imp, color = Abs_Imp)) +
+  geom_point(aes(shape = Balance)) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 70)) +
+  coord_flip() +
+  scale_color_gradient(low="blue", high="red") +
+  ggtitle("Feature Importance for Bdis RF")
+
+plot_width = 5
+plot_height = 5
+
+pdf(file = paste0(wkdir,"/osat_svc_feat_imp.pdf"), width=plot_width, height=plot_height)
+  feat_dist_svc_osat
+  dev.off()
+png(file = paste0(wkdir,"/osat_svc_feat_imp.png"), width=plot_width, height=plot_height, units = "in", res = 300)
+  feat_dist_svc_osat
+  dev.off()
+
+pdf(file = paste0(wkdir,"/osat_rft_feat_imp.pdf"), width=plot_width, height=plot_height)
+  feat_dist_rft_osat
+  dev.off()
+png(file = paste0(wkdir,"/osat_rft_feat_imp.png"), width=plot_width, height=plot_height, units = "in", res = 300)
+  feat_dist_rft_osat
+  dev.off()
+  
+pdf(file = paste0(wkdir,"/bdis_svc_feat_imp.pdf"), width=plot_width, height=plot_height)
+  feat_dist_svc_bdis
+  dev.off()
+png(file = paste0(wkdir,"/bdis_svc_feat_imp.png"), width=plot_width, height=plot_height, units = "in", res = 300)
+  feat_dist_svc_bdis
+  dev.off()
+  
+pdf(file = paste0(wkdir,"/bdis_rft_feat_imp.pdf"), width=plot_width, height=plot_height)
+  feat_dist_rft_bdis
+  dev.off()
+png(file = paste0(wkdir,"/bdis_rft_feat_imp.png"), width=plot_width, height=plot_height, units = "in", res = 300)
+  feat_dist_rft_bdis
+  dev.off()
+
+
+```
+
+#RFE supp figure
+```{r}
+install.packages("devtools")
+library(devtools)
+install_version("multipanelfigure", version = "2.1.2", repos = "http://cran.us.r-project.org")
+
+library(multipanelfigure)
+wkdir="./00_collab/02_core_pred/07_feature_selection/"
+
+plot_width = 4.75
+plot_height = 4.75
+figure1 <- multi_panel_figure(
+  width=plot_width, height=plot_height, unit="inches",
+  columns = 2, rows = 2)
+
+#osat rft
+figure1 %<>% fill_panel(
+  paste0(wkdir,"/osat_meta_21_04_bal_rft_rfe.png"),
+  column = 1,
+  row = 1,
+  scaling = "fit")
+#osat svc
+figure1 %<>% fill_panel(
+  paste0(wkdir,"/osat_meta_21_04_bal_svc_rfe.png"),
+  column = 2,
+  row = 1,
+  scaling = "fit")
+#bdis rft
+figure1 %<>% fill_panel(
+  paste0(wkdir,"/bdis_meta_21_04_09_bal_rft_rfe.png"),
+  column = 1,
+  row = 2,
+  scaling = "fit")
+#bdis svc
+figure1 %<>% fill_panel(
+  paste0(wkdir,"/bdis_meta_21_04_09_bal_svc_rfe.png"),
+  column = 2,
+  row = 2,
+  scaling = "fit")
+
+#figure1
+pdf(file = paste0(wkdir,"/osat_bdis_SVC_RFT_rfe_21_04.pdf"), width=plot_width, height=plot_height)
+  figure1
+  dev.off()
+png(file = paste0(wkdir,"/osat_bdis_SVC_RFT_rfe_21_04.png"), width=plot_width, height=plot_height, units = "in", res = 300)
+  figure1
+  dev.off()
+
+```
+
+#trying some diff plotting tools because multipanelfig decided to die
+```{r}
+install.packages("tiff")
+install.packages("rsvg")
+install_version("multipanelfigure", version = "1.1.2", repos = "http://cran.us.r-project.org")
+library(multipanelfigure)
+
+tmp = readPicture(paste0(wkdir,"/osat_meta_21_04_bal_rft_rfe.pdf"))
+
+wkdir="./00_collab/02_core_pred/07_feature_selection/"
+
+pdf_list = c(paste0(wkdir,"/osat_meta_21_04_bal_rft_rfe.pdf"),paste0(wkdir,"/osat_meta_21_04_bal_svc_rfe.pdf"))
+
+pdf_combine(pdf_list, output = paste0(wkdir,"/joined.pdf"))
+
+```
+
+#04-13-2021
+#rerun with one hot encoding and fixed gc/dinuc calculations
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+
+#hmmmmm gotta manually load thingies in huh
+wkdir = "./00_collab/02_core_pred/08_feat_imp/"
+
+rft_osat_unbal = read.table(file = paste0(wkdir, "rft_feat_imp_osat_meta_21_04.csv"), 
+                            sep = ",", header = T)
+rft_osat_bal = read.table(file = paste0(wkdir, "rft_feat_imp_osat_meta_21_04_bal.csv"), 
+                          sep = ",", header = T)
+rft_bdis_unbal = read.table(file = paste0(wkdir, "rft_feat_imp_bdis_meta_21_04_09.csv"), 
+                            sep = ",", header = T)
+rft_bdis_bal = read.table(file = paste0(wkdir, "rft_feat_imp_bdis_meta_21_04_09_bal.csv"), 
+                          sep = ",", header = T)
+svc_osat_unbal = read.table(file = paste0(wkdir, "svc_feat_imp_osat_meta_21_04.csv"), 
+                            sep = ",", header = T)
+svc_osat_bal = read.table(file = paste0(wkdir, "svc_feat_imp_osat_meta_21_04_bal.csv"), 
+                          sep = ",", header = T)
+svc_bdis_unbal = read.table(file = paste0(wkdir, "svc_feat_imp_bdis_meta_21_04_09.csv"), 
+                            sep = ",", header = T)
+svc_bdis_bal = read.table(file = paste0(wkdir, "svc_feat_imp_bdis_meta_21_04_09_bal.csv"), 
+                          sep = ",", header = T)
+
+rft_osat_unbal$Species = rep("Osat", nrow(rft_osat_unbal))
+rft_osat_bal$Species = rep("Osat", nrow(rft_osat_bal))
+rft_bdis_unbal$Species = rep("Bdis", nrow(rft_bdis_unbal))
+rft_bdis_bal$Species = rep("Bdis", nrow(rft_bdis_bal))
+svc_osat_unbal$Species = rep("Osat", nrow(svc_osat_unbal))
+svc_osat_bal$Species = rep("Osat", nrow(svc_osat_bal))
+svc_bdis_unbal$Species = rep("Bdis", nrow(svc_bdis_unbal))
+svc_bdis_bal$Species = rep("Bdis", nrow(svc_bdis_bal))
+
+rft_osat_unbal$Model = rep("RFT", nrow(rft_osat_unbal))
+rft_osat_bal$Model = rep("RFT", nrow(rft_osat_bal))
+rft_bdis_unbal$Model = rep("RFT", nrow(rft_bdis_unbal))
+rft_bdis_bal$Model = rep("RFT", nrow(rft_bdis_bal))
+svc_osat_unbal$Model = rep("SVC", nrow(svc_osat_unbal))
+svc_osat_bal$Model = rep("SVC", nrow(svc_osat_bal))
+svc_bdis_unbal$Model = rep("SVC", nrow(svc_bdis_unbal))
+svc_bdis_bal$Model = rep("SVC", nrow(svc_bdis_bal))
+
+rft_osat_unbal$Balance = rep("Unbalanced", nrow(rft_osat_unbal))
+rft_osat_bal$Balance = rep("Balanced", nrow(rft_osat_bal))
+rft_bdis_unbal$Balance = rep("Unbalanced", nrow(rft_bdis_unbal))
+rft_bdis_bal$Balance = rep("Balanced", nrow(rft_bdis_bal))
+svc_osat_unbal$Balance = rep("Unbalanced", nrow(svc_osat_unbal))
+svc_osat_bal$Balance = rep("Balanced", nrow(svc_osat_bal))
+svc_bdis_unbal$Balance = rep("Unbalanced", nrow(svc_bdis_unbal))
+svc_bdis_bal$Balance = rep("Balanced", nrow(svc_bdis_bal))
+
+#normalize svc values? (make relative)
+svc_osat_unbal = svc_osat_unbal %>% 
+  mutate(Importance = abs(Importance)/sum(abs(svc_osat_unbal$Importance)))
+svc_osat_bal = svc_osat_bal %>% 
+  mutate(Importance = abs(Importance)/sum(abs(svc_osat_bal$Importance)))
+svc_bdis_unbal = svc_bdis_unbal %>% 
+  mutate(Importance = abs(Importance)/sum(abs(svc_bdis_unbal$Importance)))
+svc_bdis_bal = svc_bdis_bal %>% 
+  mutate(Importance = abs(Importance)/sum(abs(svc_bdis_bal$Importance)))
+
+feat_imp_dict = rbind(rft_osat_unbal, rft_osat_bal, rft_bdis_unbal,
+                      rft_bdis_bal, svc_osat_unbal, svc_osat_bal,
+                      svc_bdis_unbal, svc_bdis_bal)
+
+feat_imp_dict = feat_imp_dict %>% 
+  mutate(Abs_Imp = abs(Importance))
+
+feat_dist = feat_imp_dict %>% 
+  ggplot(aes(x = Features, y = Abs_Imp, color = Abs_Imp)) +
+  geom_point(aes(shape = Balance)) +
+  facet_grid(Model ~ Species) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 70)) +
+  scale_color_gradient(low="blue", high="red") +
+  coord_flip() +
+  ylab("Importance Score") +
+  xlab("Feature")
+feat_dist
+#Hmmm I can normalize the svc measures to make them relative also
+plot_width = 6
+plot_height = 8
+pdf(file = paste0(wkdir,"/osat_bdis_svc_rft_feat_imp_04_21.pdf"), width=plot_width, height=plot_height)
+  feat_dist
+  dev.off()
+png(file = paste0(wkdir,"/osat_bdis_svc_rft_feat_imp_04_21.png"), width=plot_width, height=plot_height, units = "in", res = 300)
+  feat_dist
+  dev.off()
+
+#Alrighty, I think the best thing will be to just make separate graphs
+#four diff graphs, sorted by imp score? Or sort unbalanced, show balanced
+rft_osat = feat_imp_dict[which(feat_imp_dict$Species == "Osat" & feat_imp_dict$Model == "RFT"),]
+rft_osat = rft_osat[order(rft_osat$Abs_Imp, decreasing = TRUE),]  
+feat_dist_rft_osat = rft_osat %>% 
+  ggplot(aes(x = Features, y = Abs_Imp, color = Abs_Imp)) +
+  geom_point(aes(shape = Balance)) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 70)) +
+  coord_flip() +
+  scale_color_gradient(low="blue", high="red") +
+  ggtitle("Feature Importance for Osat RF")
+#feat_dist
+
+svc_osat = feat_imp_dict[which(feat_imp_dict$Species == "Osat" & feat_imp_dict$Model == "SVC"),]
+svc_osat = svc_osat[order(svc_osat$Abs_Imp, decreasing = TRUE),]  
+feat_dist_svc_osat = svc_osat %>% 
+  ggplot(aes(x = Features, y = Abs_Imp, color = Abs_Imp)) +
+  geom_point(aes(shape = Balance)) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 70)) +
+  coord_flip() +
+  scale_color_gradient(low="blue", high="red") +
+  ggtitle("Feature Importance for Osat SVM")
+
+svc_bdis = feat_imp_dict[which(feat_imp_dict$Species == "Bdis" & feat_imp_dict$Model == "SVC"),]
+svc_bdis = svc_bdis[order(svc_bdis$Abs_Imp, decreasing = TRUE),]  
+feat_dist_svc_bdis = svc_bdis %>% 
+  ggplot(aes(x = Features, y = Abs_Imp, color = Abs_Imp)) +
+  geom_point(aes(shape = Balance)) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 70)) +
+  coord_flip() +
+  scale_color_gradient(low="blue", high="red") +
+  ggtitle("Feature Importance for Bdis SVM")
+
+rft_bdis = feat_imp_dict[which(feat_imp_dict$Species == "Bdis" & feat_imp_dict$Model == "RFT"),]
+rft_bdis = rft_bdis[order(rft_bdis$Abs_Imp, decreasing = TRUE),]  
+feat_dist_rft_bdis = rft_bdis %>% 
+  ggplot(aes(x = Features, y = Abs_Imp, color = Abs_Imp)) +
+  geom_point(aes(shape = Balance)) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 70)) +
+  coord_flip() +
+  scale_color_gradient(low="blue", high="red") +
+  ggtitle("Feature Importance for Bdis RF")
+
+plot_width = 5
+plot_height = 5
+
+pdf(file = paste0(wkdir,"/osat_svc_feat_imp_04_21.pdf"), width=plot_width, height=plot_height)
+  feat_dist_svc_osat
+  dev.off()
+png(file = paste0(wkdir,"/osat_svc_feat_imp_04_21.png"), width=plot_width, height=plot_height, units = "in", res = 300)
+  feat_dist_svc_osat
+  dev.off()
+
+pdf(file = paste0(wkdir,"/osat_rft_feat_imp_04_21.pdf"), width=plot_width, height=plot_height)
+  feat_dist_rft_osat
+  dev.off()
+png(file = paste0(wkdir,"/osat_rft_feat_imp_04_21.png"), width=plot_width, height=plot_height, units = "in", res = 300)
+  feat_dist_rft_osat
+  dev.off()
+  
+pdf(file = paste0(wkdir,"/bdis_svc_feat_imp_04_21.pdf"), width=plot_width, height=plot_height)
+  feat_dist_svc_bdis
+  dev.off()
+png(file = paste0(wkdir,"/bdis_svc_feat_imp_04_21.png"), width=plot_width, height=plot_height, units = "in", res = 300)
+  feat_dist_svc_bdis
+  dev.off()
+  
+pdf(file = paste0(wkdir,"/bdis_rft_feat_imp_04_21.pdf"), width=plot_width, height=plot_height)
+  feat_dist_rft_bdis
+  dev.off()
+png(file = paste0(wkdir,"/bdis_rft_feat_imp_04_21.png"), width=plot_width, height=plot_height, units = "in", res = 300)
+  feat_dist_rft_bdis
+  dev.off()
+
+
+```
+
+#Add intron count and get feature importance
+```{r}
+library(tidyverse)
+library(ggplot2)
+
+wkdir="./00_collab/02_core_pred/08_feat_imp/"
+#load in osat and bdis meta tables
+osat_meta = read.table(file = paste0(wkdir, "/../osat_meta_21_04.txt"), sep = "\t", header = T)
+bdis_meta = read.table(file = paste0(wkdir, "/../bdis_meta_21_04_09.txt"), sep = "\t", header = T)
+
+osat_meta$Intron_Count = osat_meta$Exon_Count - 1
+bdis_meta$Intron_Count = bdis_meta$Exon_Count - 1
+
+write.table(osat_meta, file = paste0(wkdir, "osat_meta_ic.txt"), sep = "\t", quote = F, row.names = F )
+write.table(bdis_meta, file = paste0(wkdir, "bdis_meta_ic.txt"), sep = "\t", quote = F, row.names = F )
+
+```
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+
+#hmmmmm gotta manually load thingies in huh
+wkdir = "./00_collab/02_core_pred/08_feat_imp/"
+
+rft_osat_unbal = read.table(file = paste0(wkdir, "rft_feat_imp_osat_meta_ic.csv"), 
+                            sep = ",", header = T)
+rft_osat_bal = read.table(file = paste0(wkdir, "rft_feat_imp_osat_meta_ic_bal.csv"), 
+                          sep = ",", header = T)
+rft_bdis_unbal = read.table(file = paste0(wkdir, "rft_feat_imp_bdis_meta_ic.csv"), 
+                            sep = ",", header = T)
+rft_bdis_bal = read.table(file = paste0(wkdir, "rft_feat_imp_bdis_meta_ic_bal.csv"), 
+                          sep = ",", header = T)
+svc_osat_unbal = read.table(file = paste0(wkdir, "svc_feat_imp_osat_meta_ic.csv"), 
+                            sep = ",", header = T)
+svc_osat_bal = read.table(file = paste0(wkdir, "svc_feat_imp_osat_meta_ic_bal.csv"), 
+                          sep = ",", header = T)
+svc_bdis_unbal = read.table(file = paste0(wkdir, "svc_feat_imp_bdis_meta_ic.csv"), 
+                            sep = ",", header = T)
+svc_bdis_bal = read.table(file = paste0(wkdir, "svc_feat_imp_bdis_meta_ic_bal.csv"), 
+                          sep = ",", header = T)
+
+rft_osat_unbal$Species = rep("Osat", nrow(rft_osat_unbal))
+rft_osat_bal$Species = rep("Osat", nrow(rft_osat_bal))
+rft_bdis_unbal$Species = rep("Bdis", nrow(rft_bdis_unbal))
+rft_bdis_bal$Species = rep("Bdis", nrow(rft_bdis_bal))
+svc_osat_unbal$Species = rep("Osat", nrow(svc_osat_unbal))
+svc_osat_bal$Species = rep("Osat", nrow(svc_osat_bal))
+svc_bdis_unbal$Species = rep("Bdis", nrow(svc_bdis_unbal))
+svc_bdis_bal$Species = rep("Bdis", nrow(svc_bdis_bal))
+
+rft_osat_unbal$Model = rep("RFT", nrow(rft_osat_unbal))
+rft_osat_bal$Model = rep("RFT", nrow(rft_osat_bal))
+rft_bdis_unbal$Model = rep("RFT", nrow(rft_bdis_unbal))
+rft_bdis_bal$Model = rep("RFT", nrow(rft_bdis_bal))
+svc_osat_unbal$Model = rep("SVC", nrow(svc_osat_unbal))
+svc_osat_bal$Model = rep("SVC", nrow(svc_osat_bal))
+svc_bdis_unbal$Model = rep("SVC", nrow(svc_bdis_unbal))
+svc_bdis_bal$Model = rep("SVC", nrow(svc_bdis_bal))
+
+rft_osat_unbal$Balance = rep("Unbalanced", nrow(rft_osat_unbal))
+rft_osat_bal$Balance = rep("Balanced", nrow(rft_osat_bal))
+rft_bdis_unbal$Balance = rep("Unbalanced", nrow(rft_bdis_unbal))
+rft_bdis_bal$Balance = rep("Balanced", nrow(rft_bdis_bal))
+svc_osat_unbal$Balance = rep("Unbalanced", nrow(svc_osat_unbal))
+svc_osat_bal$Balance = rep("Balanced", nrow(svc_osat_bal))
+svc_bdis_unbal$Balance = rep("Unbalanced", nrow(svc_bdis_unbal))
+svc_bdis_bal$Balance = rep("Balanced", nrow(svc_bdis_bal))
+
+#normalize svc values? (make relative)
+svc_osat_unbal = svc_osat_unbal %>% 
+  mutate(Importance = abs(Importance)/sum(abs(svc_osat_unbal$Importance)))
+svc_osat_bal = svc_osat_bal %>% 
+  mutate(Importance = abs(Importance)/sum(abs(svc_osat_bal$Importance)))
+svc_bdis_unbal = svc_bdis_unbal %>% 
+  mutate(Importance = abs(Importance)/sum(abs(svc_bdis_unbal$Importance)))
+svc_bdis_bal = svc_bdis_bal %>% 
+  mutate(Importance = abs(Importance)/sum(abs(svc_bdis_bal$Importance)))
+
+feat_imp_dict = rbind(rft_osat_unbal, rft_osat_bal, rft_bdis_unbal,
+                      rft_bdis_bal, svc_osat_unbal, svc_osat_bal,
+                      svc_bdis_unbal, svc_bdis_bal)
+
+feat_imp_dict = feat_imp_dict %>% 
+  mutate(Abs_Imp = abs(Importance))
+
+feat_dist = feat_imp_dict %>% 
+  ggplot(aes(x = Features, y = Abs_Imp, color = Abs_Imp)) +
+  geom_point(aes(shape = Balance)) +
+  facet_grid(Model ~ Species) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 70)) +
+  scale_color_gradient(low="blue", high="red") +
+  coord_flip() +
+  ylab("Importance Score") +
+  xlab("Feature")
+feat_dist
+#Hmmm I can normalize the svc measures to make them relative also
+plot_width = 6
+plot_height = 8
+pdf(file = paste0(wkdir,"/osat_bdis_svc_rft_feat_imp_04_21_ic.pdf"), width=plot_width, height=plot_height)
+  feat_dist
+  dev.off()
+png(file = paste0(wkdir,"/osat_bdis_svc_rft_feat_imp_04_21_ic.png"), width=plot_width, height=plot_height, units = "in", res = 300)
+  feat_dist
+  dev.off()
+```
+
+
+#comparing scores from including or excluding intron count
+```{r}
+#get the values for intron / exon count to see if adding intron count detracted from exon count
+ec_ic_scores = feat_imp_dict[which(feat_imp_dict$Features == "Exon_Count" |
+                                feat_imp_dict$Features == "Intron_Count"),]
+#hmmm get these for the models run without intron count and plot differences some how?
+#add an extra tag, but these have 1:1 comparisons, no?
+#how about just these values, same graph as above but color based on IC included or not
+
+ec_ic_scores$IC = rep("Yes", nrow(ec_ic_scores))
+
+##remake feat_imp_dict from the model without intron count
+ec_scores = feat_imp_dict[which(feat_imp_dict$Features == "Exon_Count"),]
+ec_scores$IC = rep("No", nrow(ec_scores))
+
+ec_ic_df = rbind(ec_ic_scores, ec_scores)
+
+feat_dist = ec_ic_df %>% 
+  ggplot(aes(x = Features, y = Abs_Imp, color = IC)) +
+  geom_point(aes(shape = Balance), size = 5) +
+  facet_grid(Model ~ Species) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 70)) +
+  coord_flip() +
+  ylab("Importance Score") +
+  xlab("Feature")
+feat_dist
+
+plot_width = 6
+plot_height = 6
+pdf(file = paste0(wkdir,"/intron_count_test.pdf"), width=plot_width, height=plot_height)
+  feat_dist
+  dev.off()
+png(file = paste0(wkdir,"/intron_count_test.png"), width=plot_width, height=plot_height, units = "in", res = 300)
+  feat_dist
+  dev.off()
+```
+
+
+#04-16-2021
+#testing feature importance of first intron length / gc percentage
+```{r}
+library(tidyverse)
+library(ggplot2)
+
+#hmmmmm gotta manually load thingies in huh
+wkdir = "./00_collab/02_core_pred/10_first_intron//"
+
+rft_osat_unbal = read.table(file = paste0(wkdir, "rft_feat_imp_osat_meta_21_04_16.csv"), 
+                            sep = ",", header = T)
+rft_osat_bal = read.table(file = paste0(wkdir, "rft_feat_imp_osat_meta_21_04_16_bal.csv"), 
+                          sep = ",", header = T)
+rft_bdis_unbal = read.table(file = paste0(wkdir, "rft_feat_imp_bdis_meta_first_intron.csv"), 
+                            sep = ",", header = T)
+rft_bdis_bal = read.table(file = paste0(wkdir, "rft_feat_imp_bdis_meta_first_intron_bal.csv"), 
+                          sep = ",", header = T)
+svc_osat_unbal = read.table(file = paste0(wkdir, "svc_feat_imp_osat_meta_21_04_16.csv"), 
+                            sep = ",", header = T)
+svc_osat_bal = read.table(file = paste0(wkdir, "svc_feat_imp_osat_meta_21_04_16_bal.csv"), 
+                          sep = ",", header = T)
+svc_bdis_unbal = read.table(file = paste0(wkdir, "svc_feat_imp_bdis_meta_first_intron.csv"), 
+                            sep = ",", header = T)
+svc_bdis_bal = read.table(file = paste0(wkdir, "svc_feat_imp_bdis_meta_first_intron_bal.csv"), 
+                          sep = ",", header = T)
+
+rft_osat_unbal$Species = rep("Osat", nrow(rft_osat_unbal))
+rft_osat_bal$Species = rep("Osat", nrow(rft_osat_bal))
+rft_bdis_unbal$Species = rep("Bdis", nrow(rft_bdis_unbal))
+rft_bdis_bal$Species = rep("Bdis", nrow(rft_bdis_bal))
+svc_osat_unbal$Species = rep("Osat", nrow(svc_osat_unbal))
+svc_osat_bal$Species = rep("Osat", nrow(svc_osat_bal))
+svc_bdis_unbal$Species = rep("Bdis", nrow(svc_bdis_unbal))
+svc_bdis_bal$Species = rep("Bdis", nrow(svc_bdis_bal))
+
+rft_osat_unbal$Model = rep("RFT", nrow(rft_osat_unbal))
+rft_osat_bal$Model = rep("RFT", nrow(rft_osat_bal))
+rft_bdis_unbal$Model = rep("RFT", nrow(rft_bdis_unbal))
+rft_bdis_bal$Model = rep("RFT", nrow(rft_bdis_bal))
+svc_osat_unbal$Model = rep("SVC", nrow(svc_osat_unbal))
+svc_osat_bal$Model = rep("SVC", nrow(svc_osat_bal))
+svc_bdis_unbal$Model = rep("SVC", nrow(svc_bdis_unbal))
+svc_bdis_bal$Model = rep("SVC", nrow(svc_bdis_bal))
+
+rft_osat_unbal$Balance = rep("Unbalanced", nrow(rft_osat_unbal))
+rft_osat_bal$Balance = rep("Balanced", nrow(rft_osat_bal))
+rft_bdis_unbal$Balance = rep("Unbalanced", nrow(rft_bdis_unbal))
+rft_bdis_bal$Balance = rep("Balanced", nrow(rft_bdis_bal))
+svc_osat_unbal$Balance = rep("Unbalanced", nrow(svc_osat_unbal))
+svc_osat_bal$Balance = rep("Balanced", nrow(svc_osat_bal))
+svc_bdis_unbal$Balance = rep("Unbalanced", nrow(svc_bdis_unbal))
+svc_bdis_bal$Balance = rep("Balanced", nrow(svc_bdis_bal))
+
+#normalize svc values? (make relative)
+svc_osat_unbal = svc_osat_unbal %>% 
+  mutate(Importance = abs(Importance)/sum(abs(svc_osat_unbal$Importance)))
+svc_osat_bal = svc_osat_bal %>% 
+  mutate(Importance = abs(Importance)/sum(abs(svc_osat_bal$Importance)))
+svc_bdis_unbal = svc_bdis_unbal %>% 
+  mutate(Importance = abs(Importance)/sum(abs(svc_bdis_unbal$Importance)))
+svc_bdis_bal = svc_bdis_bal %>% 
+  mutate(Importance = abs(Importance)/sum(abs(svc_bdis_bal$Importance)))
+
+feat_imp_dict = rbind(rft_osat_unbal, rft_osat_bal, rft_bdis_unbal,
+                      rft_bdis_bal, svc_osat_unbal, svc_osat_bal,
+                      svc_bdis_unbal, svc_bdis_bal)
+
+feat_imp_dict = feat_imp_dict %>% 
+  mutate(Abs_Imp = abs(Importance))
+
+feat_dist = feat_imp_dict %>% 
+  ggplot(aes(x = Features, y = Abs_Imp, color = Abs_Imp)) +
+  geom_point(aes(shape = Balance)) +
+  facet_grid(Model ~ Species) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 70)) +
+  scale_color_gradient(low="blue", high="red") +
+  coord_flip() +
+  ylab("Importance Score") +
+  xlab("Feature")
+feat_dist
+#Hmmm I can normalize the svc measures to make them relative also
+plot_width = 6
+plot_height = 8
+pdf(file = paste0(wkdir,"/osat_bdis_svc_rft_feat_imp_21_04_16_fi.pdf"), width=plot_width, height=plot_height)
+ feat_dist
+  dev.off()
+png(file = paste0(wkdir,"/osat_bdis_svc_rft_feat_imp_21_04_16_fi.png"), width=plot_width, height=plot_height, units = "in", res = 300)
+  feat_dist
+  dev.off()
+```
+
+
+#04-26-2021
+#not preprocessing one hot encoding
+```{r}
+library(tidyverse)
+library(ggplot2)
+
+#hmmmmm gotta manually load thingies in huh
+wkdir = "./00_collab/02_core_pred/07_feature_selection//"
+
+rft_osat_unbal = read.table(file = paste0(wkdir, "rft_feat_imp_osat_meta_21_04_ohe.csv"), 
+                            sep = ",", header = T)
+rft_osat_bal = read.table(file = paste0(wkdir, "rft_feat_imp_osat_meta_21_04_bal_ohe.csv"), 
+                          sep = ",", header = T)
+rft_bdis_unbal = read.table(file = paste0(wkdir, "rft_feat_imp_bdis_meta_21_04_09_ohe.csv"), 
+                            sep = ",", header = T)
+rft_bdis_bal = read.table(file = paste0(wkdir, "rft_feat_imp_bdis_meta_21_04_09_bal_ohe.csv"), 
+                          sep = ",", header = T)
+svc_osat_unbal = read.table(file = paste0(wkdir, "svc_feat_imp_osat_meta_21_04_ohe.csv"), 
+                            sep = ",", header = T)
+svc_osat_bal = read.table(file = paste0(wkdir, "svc_feat_imp_osat_meta_21_04_bal_ohe.csv"), 
+                          sep = ",", header = T)
+svc_bdis_unbal = read.table(file = paste0(wkdir, "svc_feat_imp_bdis_meta_21_04_09_ohe.csv"), 
+                            sep = ",", header = T)
+svc_bdis_bal = read.table(file = paste0(wkdir, "svc_feat_imp_bdis_meta_21_04_09_bal_ohe.csv"), 
+                          sep = ",", header = T)
+
+rft_osat_unbal$Species = rep("Osat", nrow(rft_osat_unbal))
+rft_osat_bal$Species = rep("Osat", nrow(rft_osat_bal))
+rft_bdis_unbal$Species = rep("Bdis", nrow(rft_bdis_unbal))
+rft_bdis_bal$Species = rep("Bdis", nrow(rft_bdis_bal))
+svc_osat_unbal$Species = rep("Osat", nrow(svc_osat_unbal))
+svc_osat_bal$Species = rep("Osat", nrow(svc_osat_bal))
+svc_bdis_unbal$Species = rep("Bdis", nrow(svc_bdis_unbal))
+svc_bdis_bal$Species = rep("Bdis", nrow(svc_bdis_bal))
+
+rft_osat_unbal$Model = rep("RFT", nrow(rft_osat_unbal))
+rft_osat_bal$Model = rep("RFT", nrow(rft_osat_bal))
+rft_bdis_unbal$Model = rep("RFT", nrow(rft_bdis_unbal))
+rft_bdis_bal$Model = rep("RFT", nrow(rft_bdis_bal))
+svc_osat_unbal$Model = rep("SVC", nrow(svc_osat_unbal))
+svc_osat_bal$Model = rep("SVC", nrow(svc_osat_bal))
+svc_bdis_unbal$Model = rep("SVC", nrow(svc_bdis_unbal))
+svc_bdis_bal$Model = rep("SVC", nrow(svc_bdis_bal))
+
+rft_osat_unbal$Balance = rep("Unbalanced", nrow(rft_osat_unbal))
+rft_osat_bal$Balance = rep("Balanced", nrow(rft_osat_bal))
+rft_bdis_unbal$Balance = rep("Unbalanced", nrow(rft_bdis_unbal))
+rft_bdis_bal$Balance = rep("Balanced", nrow(rft_bdis_bal))
+svc_osat_unbal$Balance = rep("Unbalanced", nrow(svc_osat_unbal))
+svc_osat_bal$Balance = rep("Balanced", nrow(svc_osat_bal))
+svc_bdis_unbal$Balance = rep("Unbalanced", nrow(svc_bdis_unbal))
+svc_bdis_bal$Balance = rep("Balanced", nrow(svc_bdis_bal))
+
+#normalize svc values? (make relative)
+svc_osat_unbal = svc_osat_unbal %>% 
+  mutate(Importance = abs(Importance)/sum(abs(svc_osat_unbal$Importance)))
+svc_osat_bal = svc_osat_bal %>% 
+  mutate(Importance = abs(Importance)/sum(abs(svc_osat_bal$Importance)))
+svc_bdis_unbal = svc_bdis_unbal %>% 
+  mutate(Importance = abs(Importance)/sum(abs(svc_bdis_unbal$Importance)))
+svc_bdis_bal = svc_bdis_bal %>% 
+  mutate(Importance = abs(Importance)/sum(abs(svc_bdis_bal$Importance)))
+
+feat_imp_dict = rbind(rft_osat_unbal, rft_osat_bal, rft_bdis_unbal,
+                      rft_bdis_bal, svc_osat_unbal, svc_osat_bal,
+                      svc_bdis_unbal, svc_bdis_bal)
+
+feat_imp_dict = feat_imp_dict %>% 
+  mutate(Abs_Imp = abs(Importance))
+
+feat_dist = feat_imp_dict %>% 
+  ggplot(aes(x = Features, y = Abs_Imp, color = Abs_Imp)) +
+  geom_point(aes(shape = Balance)) +
+  facet_grid(Model ~ Species) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 70)) +
+  scale_color_gradient(low="blue", high="red") +
+  coord_flip() +
+  ylab("Importance Score") +
+  xlab("Feature")
+feat_dist
+#Hmmm I can normalize the svc measures to make them relative also
+plot_width = 6
+plot_height = 8
+pdf(file = paste0(wkdir,"/osat_bdis_svc_rft_feat_imp_ohe_04_26.pdf"), width=plot_width, height=plot_height)
+  feat_dist
+  dev.off()
+png(file = paste0(wkdir,"/osat_bdis_svc_rft_feat_imp_ohe_04_26.png"), width=plot_width, height=plot_height, units = "in", res = 300)
+  feat_dist
+  dev.off()
+
+```
+
+
+#try different arbitrary value to see if importance of para_ka / para_ka_ks goes down at all
+```{r}
+library(tidyverse)
+library(ggplot2)
+
+#hmmmmm gotta manually load thingies in huh
+wkdir = "./00_collab/02_core_pred/07_feature_selection/00_arb_change//"
+
+arb_value = "2"
+
+rft_osat_unbal = read.table(file = paste0(wkdir, "rft_feat_imp_osat_meta_21_04_27_arb_",arb_value,"_ohe.csv"), 
+                            sep = ",", header = T)
+rft_osat_bal = read.table(file = paste0(wkdir, "rft_feat_imp_osat_meta_21_04_27_arb_",arb_value,"_bal_ohe.csv"), 
+                          sep = ",", header = T)
+rft_bdis_unbal = read.table(file = paste0(wkdir, "rft_feat_imp_bdis_meta_21_04_27_arb_",arb_value,"_ohe.csv"), 
+                            sep = ",", header = T)
+rft_bdis_bal = read.table(file = paste0(wkdir, "rft_feat_imp_bdis_meta_21_04_27_arb_",arb_value,"_bal_ohe.csv"), 
+                          sep = ",", header = T)
+svc_osat_unbal = read.table(file = paste0(wkdir, "svc_feat_imp_osat_meta_21_04_27_arb_",arb_value,"_ohe.csv"), 
+                            sep = ",", header = T)
+svc_osat_bal = read.table(file = paste0(wkdir, "svc_feat_imp_osat_meta_21_04_27_arb_",arb_value,"_bal_ohe.csv"), 
+                          sep = ",", header = T)
+svc_bdis_unbal = read.table(file = paste0(wkdir, "svc_feat_imp_bdis_meta_21_04_27_arb_",arb_value,"_ohe.csv"), 
+                            sep = ",", header = T)
+svc_bdis_bal = read.table(file = paste0(wkdir, "svc_feat_imp_bdis_meta_21_04_27_arb_",arb_value,"_bal_ohe.csv"), 
+                          sep = ",", header = T)
+
+rft_osat_unbal$Species = rep("Osat", nrow(rft_osat_unbal))
+rft_osat_bal$Species = rep("Osat", nrow(rft_osat_bal))
+rft_bdis_unbal$Species = rep("Bdis", nrow(rft_bdis_unbal))
+rft_bdis_bal$Species = rep("Bdis", nrow(rft_bdis_bal))
+svc_osat_unbal$Species = rep("Osat", nrow(svc_osat_unbal))
+svc_osat_bal$Species = rep("Osat", nrow(svc_osat_bal))
+svc_bdis_unbal$Species = rep("Bdis", nrow(svc_bdis_unbal))
+svc_bdis_bal$Species = rep("Bdis", nrow(svc_bdis_bal))
+
+rft_osat_unbal$Model = rep("RFT", nrow(rft_osat_unbal))
+rft_osat_bal$Model = rep("RFT", nrow(rft_osat_bal))
+rft_bdis_unbal$Model = rep("RFT", nrow(rft_bdis_unbal))
+rft_bdis_bal$Model = rep("RFT", nrow(rft_bdis_bal))
+svc_osat_unbal$Model = rep("SVC", nrow(svc_osat_unbal))
+svc_osat_bal$Model = rep("SVC", nrow(svc_osat_bal))
+svc_bdis_unbal$Model = rep("SVC", nrow(svc_bdis_unbal))
+svc_bdis_bal$Model = rep("SVC", nrow(svc_bdis_bal))
+
+rft_osat_unbal$Balance = rep("Unbalanced", nrow(rft_osat_unbal))
+rft_osat_bal$Balance = rep("Balanced", nrow(rft_osat_bal))
+rft_bdis_unbal$Balance = rep("Unbalanced", nrow(rft_bdis_unbal))
+rft_bdis_bal$Balance = rep("Balanced", nrow(rft_bdis_bal))
+svc_osat_unbal$Balance = rep("Unbalanced", nrow(svc_osat_unbal))
+svc_osat_bal$Balance = rep("Balanced", nrow(svc_osat_bal))
+svc_bdis_unbal$Balance = rep("Unbalanced", nrow(svc_bdis_unbal))
+svc_bdis_bal$Balance = rep("Balanced", nrow(svc_bdis_bal))
+
+#normalize svc values? (make relative)
+svc_osat_unbal = svc_osat_unbal %>% 
+  mutate(Importance = abs(Importance)/sum(abs(svc_osat_unbal$Importance)))
+svc_osat_bal = svc_osat_bal %>% 
+  mutate(Importance = abs(Importance)/sum(abs(svc_osat_bal$Importance)))
+svc_bdis_unbal = svc_bdis_unbal %>% 
+  mutate(Importance = abs(Importance)/sum(abs(svc_bdis_unbal$Importance)))
+svc_bdis_bal = svc_bdis_bal %>% 
+  mutate(Importance = abs(Importance)/sum(abs(svc_bdis_bal$Importance)))
+
+feat_imp_dict = rbind(rft_osat_unbal, rft_osat_bal, rft_bdis_unbal,
+                      rft_bdis_bal, svc_osat_unbal, svc_osat_bal,
+                      svc_bdis_unbal, svc_bdis_bal)
+
+feat_imp_dict = feat_imp_dict %>% 
+  mutate(Abs_Imp = abs(Importance))
+
+feat_dist = feat_imp_dict %>% 
+  ggplot(aes(x = Features, y = Abs_Imp, color = Abs_Imp)) +
+  geom_point(aes(shape = Balance)) +
+  facet_grid(Model ~ Species) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 70)) +
+  scale_color_gradient(low="blue", high="red") +
+  coord_flip() +
+  ylab("Importance Score") +
+  xlab("Feature")
+#feat_dist
+#Hmmm I can normalize the svc measures to make them relative also
+plot_width = 6
+plot_height = 8
+pdf(file = paste0(wkdir,"/osat_bdis_svc_rft_feat_imp_ohe_04_27_arb_",arb_value,".pdf"), width=plot_width, height=plot_height)
+  feat_dist
+  dev.off()
+png(file = paste0(wkdir,"/osat_bdis_svc_rft_feat_imp_ohe_04_27_arb_",arb_value,".png"), width=plot_width, height=plot_height, units = "in", res = 300)
+  feat_dist
+  dev.off()
+
+```
+
+
+#different bdis pav mat that matches what we did last time
+```{r}
+library(tidyverse)
+library(ggplot2)
+
+#hmmmmm gotta manually load thingies in huh
+wkdir = "./00_collab/02_core_pred/08_feat_imp///"
+
+rft_osat_unbal = read.table(file = paste0(wkdir, "rft_feat_imp_osat_meta_21_04_27_ohe.csv"), 
+                            sep = ",", header = T)
+rft_osat_bal = read.table(file = paste0(wkdir, "rft_feat_imp_osat_meta_21_04_27_bal_ohe.csv"), 
+                          sep = ",", header = T)
+rft_bdis_unbal = read.table(file = paste0(wkdir, "rft_feat_imp_bdis_meta_21_04_30_ohe.csv"), 
+                            sep = ",", header = T)
+rft_bdis_bal = read.table(file = paste0(wkdir, "rft_feat_imp_bdis_meta_21_04_30_bal_ohe.csv"), 
+                          sep = ",", header = T)
+svc_osat_unbal = read.table(file = paste0(wkdir, "svc_feat_imp_osat_meta_21_04_27_ohe.csv"), 
+                            sep = ",", header = T)
+svc_osat_bal = read.table(file = paste0(wkdir, "svc_feat_imp_osat_meta_21_04_27_bal_ohe.csv"), 
+                          sep = ",", header = T)
+svc_bdis_unbal = read.table(file = paste0(wkdir, "svc_feat_imp_bdis_meta_21_04_30_ohe.csv"), 
+                            sep = ",", header = T)
+svc_bdis_bal = read.table(file = paste0(wkdir, "svc_feat_imp_bdis_meta_21_04_30_bal_ohe.csv"), 
+                          sep = ",", header = T)
+
+rft_osat_unbal$Species = rep("Osat", nrow(rft_osat_unbal))
+rft_osat_bal$Species = rep("Osat", nrow(rft_osat_bal))
+rft_bdis_unbal$Species = rep("Bdis", nrow(rft_bdis_unbal))
+rft_bdis_bal$Species = rep("Bdis", nrow(rft_bdis_bal))
+svc_osat_unbal$Species = rep("Osat", nrow(svc_osat_unbal))
+svc_osat_bal$Species = rep("Osat", nrow(svc_osat_bal))
+svc_bdis_unbal$Species = rep("Bdis", nrow(svc_bdis_unbal))
+svc_bdis_bal$Species = rep("Bdis", nrow(svc_bdis_bal))
+
+rft_osat_unbal$Model = rep("RFT", nrow(rft_osat_unbal))
+rft_osat_bal$Model = rep("RFT", nrow(rft_osat_bal))
+rft_bdis_unbal$Model = rep("RFT", nrow(rft_bdis_unbal))
+rft_bdis_bal$Model = rep("RFT", nrow(rft_bdis_bal))
+svc_osat_unbal$Model = rep("SVC", nrow(svc_osat_unbal))
+svc_osat_bal$Model = rep("SVC", nrow(svc_osat_bal))
+svc_bdis_unbal$Model = rep("SVC", nrow(svc_bdis_unbal))
+svc_bdis_bal$Model = rep("SVC", nrow(svc_bdis_bal))
+
+rft_osat_unbal$Balance = rep("Unbalanced", nrow(rft_osat_unbal))
+rft_osat_bal$Balance = rep("Balanced", nrow(rft_osat_bal))
+rft_bdis_unbal$Balance = rep("Unbalanced", nrow(rft_bdis_unbal))
+rft_bdis_bal$Balance = rep("Balanced", nrow(rft_bdis_bal))
+svc_osat_unbal$Balance = rep("Unbalanced", nrow(svc_osat_unbal))
+svc_osat_bal$Balance = rep("Balanced", nrow(svc_osat_bal))
+svc_bdis_unbal$Balance = rep("Unbalanced", nrow(svc_bdis_unbal))
+svc_bdis_bal$Balance = rep("Balanced", nrow(svc_bdis_bal))
+
+#normalize svc values? (make relative)
+svc_osat_unbal = svc_osat_unbal %>% 
+  mutate(Importance = abs(Importance)/sum(abs(svc_osat_unbal$Importance)))
+svc_osat_bal = svc_osat_bal %>% 
+  mutate(Importance = abs(Importance)/sum(abs(svc_osat_bal$Importance)))
+svc_bdis_unbal = svc_bdis_unbal %>% 
+  mutate(Importance = abs(Importance)/sum(abs(svc_bdis_unbal$Importance)))
+svc_bdis_bal = svc_bdis_bal %>% 
+  mutate(Importance = abs(Importance)/sum(abs(svc_bdis_bal$Importance)))
+
+feat_imp_dict = rbind(rft_osat_unbal, rft_osat_bal, rft_bdis_unbal,
+                      rft_bdis_bal, svc_osat_unbal, svc_osat_bal,
+                      svc_bdis_unbal, svc_bdis_bal)
+
+feat_imp_dict = feat_imp_dict %>% 
+  mutate(Abs_Imp = abs(Importance))
+
+feat_dist = feat_imp_dict %>% 
+  ggplot(aes(x = Features, y = Abs_Imp, color = Abs_Imp)) +
+  geom_point(aes(shape = Balance)) +
+  facet_grid(Model ~ Species) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 70)) +
+  scale_color_gradient(low="blue", high="red") +
+  coord_flip() +
+  ylab("Importance Score") +
+  xlab("Feature")
+feat_dist
+#Hmmm I can normalize the svc measures to make them relative also
+plot_width = 6
+plot_height = 8
+pdf(file = paste0(wkdir,"/osat_bdis_svc_rft_feat_imp_ohe_04_30.pdf"), width=plot_width, height=plot_height)
+  feat_dist
+  dev.off()
+png(file = paste0(wkdir,"/osat_bdis_svc_rft_feat_imp_ohe_04_30.png"), width=plot_width, height=plot_height, units = "in", res = 300)
+  feat_dist
+  dev.off()
+
+```
+
+
+sessionInfo()
+R version 4.0.3 (2020-10-10)
+Platform: x86_64-apple-darwin17.0 (64-bit)
+Running under: macOS Catalina 10.15.7
+
+Matrix products: default
+BLAS:   /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/4.0/Resources/lib/libRlapack.dylib
+
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+ [1] multipanelfigure_2.1.2 gridExtra_2.3          e1071_1.7-6            caret_6.0-86          
+ [5] lattice_0.20-41        forcats_0.5.1          stringr_1.4.0          dplyr_1.0.4           
+ [9] purrr_0.3.4            readr_1.4.0            tidyr_1.1.2            tibble_3.0.6          
+[13] ggplot2_3.3.3          tidyverse_1.3.0        phytools_0.7-70        maps_3.3.0            
+[17] ape_5.4-1             
+
+loaded via a namespace (and not attached):
+ [1] assertive.base_0.0-9       colorspace_2.0-0           ellipsis_0.3.1            
+ [4] class_7.3-17               fs_1.5.0                   rstudioapi_0.13           
+ [7] proxy_0.4-25               farver_2.0.3               prodlim_2019.11.13        
+[10] fansi_0.4.2                lubridate_1.7.9.2          xml2_1.3.2                
+[13] codetools_0.2-16           splines_4.0.3              mnormt_2.0.2              
+[16] knitr_1.31                 jsonlite_1.7.2             pROC_1.17.0.1             
+[19] broom_0.7.4                dbplyr_2.1.0               compiler_4.0.3            
+[22] httr_1.4.2                 backports_1.2.1            assertthat_0.2.1          
+[25] Matrix_1.2-18              cli_2.4.0                  htmltools_0.5.1.1         
+[28] tools_4.0.3                igraph_1.2.6               coda_0.19-4               
+[31] gtable_0.3.0               glue_1.4.2                 reshape2_1.4.4            
+[34] clusterGeneration_1.3.7    tinytex_0.29               fastmatch_1.1-0           
+[37] Rcpp_1.0.6                 cellranger_1.1.0           vctrs_0.3.6               
+[40] nlme_3.1-149               assertive.files_0.0-2      iterators_1.0.13          
+[43] timeDate_3043.102          gower_0.2.2                xfun_0.20                 
+[46] rvest_0.3.6                lifecycle_1.0.0            phangorn_2.5.5            
+[49] gtools_3.8.2               MASS_7.3-53                scales_1.1.1              
+[52] ipred_0.9-11               hms_1.0.0                  parallel_4.0.3            
+[55] expm_0.999-6               yaml_2.2.1                 rpart_4.1-15              
+[58] stringi_1.5.3              foreach_1.5.1              plotrix_3.8-1             
+[61] lava_1.6.9                 rlang_0.4.10               pkgconfig_2.0.3           
+[64] evaluate_0.14              assertive.properties_0.0-4 recipes_0.1.16            
+[67] labeling_0.4.2             tidyselect_1.1.0           plyr_1.8.6                
+[70] magrittr_2.0.1             R6_2.5.0                   magick_2.6.0              
+[73] generics_0.1.0             combinat_0.0-8             DBI_1.1.1                 
+[76] pillar_1.4.7               haven_2.3.1                withr_2.4.1               
+[79] assertive.numbers_0.0-2    survival_3.2-7             scatterplot3d_0.3-41      
+[82] nnet_7.3-14                modelr_0.1.8               crayon_1.4.0              
+[85] assertive.types_0.0-3      utf8_1.1.4                 tmvnsim_1.0-2             
+[88] rmarkdown_2.6              grid_4.0.3                 readxl_1.3.1              
+[91] data.table_1.14.0          ModelMetrics_1.2.2.2       reprex_1.0.0              
+[94] digest_0.6.27              numDeriv_2016.8-1.1        gridGraphics_0.5-1        
+[97] stats4_4.0.3               munsell_0.5.0              quadprog_1.5-8 
